@@ -2,18 +2,35 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Sistema Tambo - JS Avanzado</title>
+    <title>Minimarket Tambo - JS Avanzado</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
+        header { background-color: #5c0632; color: white; padding: 15px; text-align: center; border-radius: 8px; }
+        .catalogo { display: flex; gap: 20px; margin-top: 20px; justify-content: center; flex-wrap: wrap; }
+        .card { background: white; border: 1px solid #ddd; border-radius: 8px; width: 200px; padding: 15px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .card img { width: 100px; height: 100px; object-fit: contain; }
+        .precio { color: #d32f2f; font-weight: bold; font-size: 1.1em; }
+        .btn-comprar { background-color: #7b1fa2; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-top: 10px; }
+        .btn-comprar:hover { background-color: #5c0632; }
+    </style>
 </head>
 <body>
-    <h1>Sistema de Control - Tiendas Tambo</h1>
-    
-    <!-- Input y controles para probar las funciones -->
-    <input type="text" id="codigoProducto" placeholder="Ingrese código o nombre de producto">
-    <button onclick="ejecutarSimulacionTambo()">Probar Operación</button>
-    
-    <p id="resultadoTambo">Esperando acción...</p>
 
-    <!-- Vinculación del script principal -->
+    <header>
+        <h2>¡Compra online en tu Tambo local!</h2>
+    </header>
+
+    <h3>Catálogo de Productos</h3>
+    
+    <div class="catalogo" id="contenedorProductos"></div>
+
+    <div style="margin-top: 30px;">
+        <input type="text" id="filtroInput" placeholder="Buscar producto...">
+        <button onclick="buscarProducto()" class="btn-comprar">Filtrar</button>
+    </div>
+
+    <p id="mensajeSalida" style="font-weight: bold; margin-top: 15px;"></p>
+
     <script src="app.js"></script>
 </body>
 </html>

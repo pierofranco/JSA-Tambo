@@ -1,61 +1,51 @@
-// --- SEMANA 1 & 2: Variables, Tipos de datos, Operadores y BigInt ---
-const nombreTienda = "Tambo+ Chorrillos";
-let cajaAbierta = true;
-let ventasTotalesDia = 1500n; // Uso de BigInt para transacciones masivas
-
-// Operadores lógicos y matemáticos
-let stockBebidas = 50;
-let stockSnacks = 20;
-let stockTotal = stockBebidas + stockSnacks;
-let hayStockCritico = (stockTotal < 100) && cajaAbierta;
-
-console.log(`Tienda: ${nombreTienda} | Stock Crítico: ${hayStockCritico}`);
-
-// --- SEMANA 4: Clases, Arreglos y Métodos Avanzados ---
 class ProductoTambo {
-    constructor(nombre, categoria, precio, stock) {
+    constructor(nombre, categoria, precio, imagen) {
         this.nombre = nombre;
         this.categoria = categoria;
         this.precio = precio;
-        this.stock = stock;
+        this.imagen = imagen; // Ruta local de la imagen
     }
 
-    obtenerInfo() {
-        // --- SEMANA 3: Interpolación y manejo de cadenas ---
-        return `Producto: ${this.nombre.toUpperCase()} [Categoría: ${this.categoria}] - Precio: S/. ${this.precio.toFixed(2)}`;
+    obtenerHtmlCard() {
+        return `
+            <div class="card">
+                <img src="${this.imagen}" alt="${this.nombre}" onerror="this.src='https://via.placeholder.com/100?text=Tambo'">
+                <h4>${this.nombre}</h4>
+                <p>Cat: ${this.categoria}</p>
+                <p class="precio">S/. ${this.precio.toFixed(2)}</p>
+                <button class="btn-comprar" onclick="alert('¡Compraste ${this.nombre}!')">Agregar</button>
+            </div>
+        `;
     }
 }
 
-// Catálogo inicial usando arreglos lineales y objetos
+// Catálogo enlazado a la carpeta img local
 let catalogoTambo = [
-    new ProductoTambo("Agua San Luis 600ml", "Bebidas", 2.50, 40),
-    new ProductoTambo("Galleta Field Soda", "Snacks", 1.20, 15),
-    new ProductoTambo("Cabanossi Nicolini", "Abarrotes", 3.80, 25),
-    new ProductoTambo("Energizante Red Bull", "Bebidas", 7.50, 10)
+    new ProductoTambo("Agua San Luis 600ml", "Bebidas", 2.50, "img/agua.jpg"),
+    new ProductoTambo("Galleta Field Soda", "Snacks", 1.20, "img/galleta.jpg"),
+    new ProductoTambo("Energizante Red Bull", "Bebidas", 7.50, "img/redbull.jpg")
 ];
 
-// Uso de funciones flecha, filter y map (Semanas 2 y 4)
-function filtrarBebidasBaratas() {
-    return catalogoTambo
-        .filter(prod => prod.categoria === "Bebidas" && prod.precio < 5.00)
-        .map(prod => prod.nombre);
-}
-
-// --- Función principal enlazada al botón del HTML ---
-function ejecutarSimulacionTambo() {
-    let inputUsuario = document.getElementById("codigoProducto").value;
+function renderizarCatalogo(productosAMostrar) {
+    let contenedor = document.getElementById("contenedorProductos");
+    contenedor.innerHTML = "";
     
-    // Búsqueda en arreglos (Semana 3 y 4)
-    let encontrado = catalogoTambo.find(p => p.nombre.toLowerCase().includes(inputUsuario.toLowerCase()));
-
-    let mensajeFinal = "";
-    if (encontrado) {
-        mensajeFinal = encontrado.obtenerInfo();
-    } else {
-        mensajeFinal = `No se encontró el producto "${inputUsuario}" en el sistema de Tambo.`;
+    for (let prod of productosAMostrar) {
+        contenedor.innerHTML += prod.obtenerHtmlCard();
     }
-
-    // Salida en pantalla (Semana 1)
-    document.getElementById("resultadoTambo").innerText = mensajeFinal;
-    console.log("Bebidas económicas disponibles:", filtrarBebidasBaratas());
 }
+
+function buscarProducto() {
+    let texto = document.getElementById("filtroInput").value.toLowerCase().trim();
+    let resultados = catalogoTambo.filter(p => p.nombre.toLowerCase().includes(texto));
+    
+    if (resultados.length > 0) {
+        renderizarCatalogo(resultados);
+        document.getElementById("mensajeSalida").innerText = `Se encontraron ${resultados.length} producto(s).`;
+    } else {
+        document.getElementById("contenedorProductos").innerHTML = "<p>No hay productos disponibles.</p>";
+        document.getElementById("mensajeSalida").innerText = "No se encontraron resultados.";
+    }
+}
+
+renderizarCatalogo(catalogoTambo);
