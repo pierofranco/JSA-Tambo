@@ -2,34 +2,85 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Minimarket Tambo - JS Avanzado</title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
-        header { background-color: #5c0632; color: white; padding: 15px; text-align: center; border-radius: 8px; }
-        .catalogo { display: flex; gap: 20px; margin-top: 20px; justify-content: center; flex-wrap: wrap; }
-        .card { background: white; border: 1px solid #ddd; border-radius: 8px; width: 200px; padding: 15px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .card img { width: 100px; height: 100px; object-fit: contain; }
-        .precio { color: #d32f2f; font-weight: bold; font-size: 1.1em; }
-        .btn-comprar { background-color: #7b1fa2; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-top: 10px; }
-        .btn-comprar:hover { background-color: #5c0632; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TAMBOPOS - Sistema POS Avanzado</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-    <header>
-        <h2>¡Compra online en tu Tambo local!</h2>
+    <header class="main-header">
+        <h1>POS TIENDAS TAMBO</h1>
+        <p>Sistema POS Activo - JavaScript Avanzado</p>
     </header>
 
-    <h3>Catálogo de Productos</h3>
-    
-    <div class="catalogo" id="contenedorProductos"></div>
+    <div class="container">
+        <!-- COLUMNA IZQUIERDA: Catálogo y Filtros -->
+        <main class="left-panel">
+            <div class="card">
+                <h2>Búsqueda y Filtros</h2>
+                <div class="filter-box">
+                    <label for="selectCategoria">Categoría:</label>
+                    <select id="selectCategoria" onchange="filtrarPorCategoria()">
+                        <option value="TODAS">Todas las categorías</option>
+                        <option value="Bebidas">Bebidas</option>
+                        <option value="Snacks">Snacks</option>
+                        <option value="Comida Rápida">Comida Rápida</option>
+                        <option value="Abarrotes">Abarrotes</option>
+                    </select>
+                </div>
+            </div>
 
-    <div style="margin-top: 30px;">
-        <input type="text" id="filtroInput" placeholder="Buscar producto...">
-        <button onclick="buscarProducto()" class="btn-comprar">Filtrar</button>
+            <div class="card">
+                <h2>Catálogo de Productos</h2>
+                <div id="gridProductos" class="grid-productos"></div>
+            </div>
+        </main>
+
+        <!-- COLUMNA DERECHA: Carrito y Comprobante -->
+        <aside class="right-panel">
+            <div class="card">
+                <h2>Tu Carrito <span id="lblCantidadCarrito">(0)</span></h2>
+                <div id="tblCarritoBody" class="carrito-lista"></div>
+
+                <div class="cliente-box">
+                    <label for="selectTipoDoc">Tipo Documento:</label>
+                    <select id="selectTipoDoc">
+                        <option value="DNI">DNI (Perú)</option>
+                        <option value="RUC">RUC (Perú)</option>
+                        <option value="CE">Carné de Extranjería</option>
+                        <option value="PASAPORTE">Pasaporte Extranjero</option>
+                    </select>
+                    
+                    <label for="txtDni" style="margin-top: 0.4rem;">N° Documento:</label>
+                    <input type="text" id="txtDni" placeholder="Ej: 72839401">
+                </div>
+
+                <div class="totales-box-tambo">
+                    <div class="linea-total">
+                        <span>Total Productos</span>
+                        <span id="lblTotalProductos">S/ 0.00</span>
+                    </div>
+                    <div class="linea-total descuento">
+                        <span>Descuentos</span>
+                        <span id="lblDescuentoTotal">- S/ 0.00</span>
+                    </div>
+                    <div class="linea-total subtotal">
+                        <strong>Subtotal</strong>
+                        <strong id="lblSubtotalFinal">S/ 0.00</strong>
+                    </div>
+                </div>
+
+                <button onclick="procesarPago()" class="btn-primario block">Procesar Pago</button>
+            </div>
+
+            <div class="card">
+                <h2>Comprobante Emitido</h2>
+                <pre id="salidaTicket" class="ticket-output">Complete una venta para generar el comprobante...</pre>
+            </div>
+
+            <button onclick="exportarEImprimirJSON()" class="btn-secundario">Ver JSON en Consola (F12)</button>
+        </aside>
     </div>
-
-    <p id="mensajeSalida" style="font-weight: bold; margin-top: 15px;"></p>
 
     <script src="app.js"></script>
 </body>
