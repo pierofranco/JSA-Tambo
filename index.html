@@ -1,87 +1,18 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TAMBOPOS - Sistema POS Avanzado</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-
-    <header class="main-header">
-        <h1>POS TIENDAS TAMBO</h1>
-        <p>Sistema POS Activo - JavaScript Avanzado</p>
-    </header>
-
-    <div class="container">
-        <!-- COLUMNA IZQUIERDA: Catálogo y Filtros -->
-        <main class="left-panel">
-            <div class="card">
-                <h2>Búsqueda y Filtros</h2>
-                <div class="filter-box">
-                    <label for="selectCategoria">Categoría:</label>
-                    <select id="selectCategoria" onchange="filtrarPorCategoria()">
-                        <option value="TODAS">Todas las categorías</option>
-                        <option value="Bebidas">Bebidas</option>
-                        <option value="Snacks">Snacks</option>
-                        <option value="Comida Rápida">Comida Rápida</option>
-                        <option value="Abarrotes">Abarrotes</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="card">
-                <h2>Catálogo de Productos</h2>
-                <div id="gridProductos" class="grid-productos"></div>
-            </div>
-        </main>
-
-        <!-- COLUMNA DERECHA: Carrito y Comprobante -->
-        <aside class="right-panel">
-            <div class="card">
-                <h2>Tu Carrito <span id="lblCantidadCarrito">(0)</span></h2>
-                <div id="tblCarritoBody" class="carrito-lista"></div>
-
-                <div class="cliente-box">
-                    <label for="selectTipoDoc">Tipo Documento:</label>
-                    <select id="selectTipoDoc">
-                        <option value="DNI">DNI (Perú)</option>
-                        <option value="RUC">RUC (Perú)</option>
-                        <option value="CE">Carné de Extranjería</option>
-                        <option value="PASAPORTE">Pasaporte Extranjero</option>
-                    </select>
-                    
-                    <label for="txtDni" style="margin-top: 0.4rem;">N° Documento:</label>
-                    <input type="text" id="txtDni" placeholder="Ej: 72839401">
-                </div>
-
-                <div class="totales-box-tambo">
-                    <div class="linea-total">
-                        <span>Total Productos</span>
-                        <span id="lblTotalProductos">S/ 0.00</span>
-                    </div>
-                    <div class="linea-total descuento">
-                        <span>Descuentos</span>
-                        <span id="lblDescuentoTotal">- S/ 0.00</span>
-                    </div>
-                    <div class="linea-total subtotal">
-                        <strong>Subtotal</strong>
-                        <strong id="lblSubtotalFinal">S/ 0.00</strong>
-                    </div>
-                </div>
-
-                <button onclick="procesarPago()" class="btn-primario block">Procesar Pago</button>
-            </div>
-
-            <div class="card">
-                <h2>Comprobante Emitido</h2>
-                <pre id="salidaTicket" class="ticket-output">Complete una venta para generar el comprobante...</pre>
-            </div>
-
-            <button onclick="exportarEImprimirJSON()" class="btn-secundario">Ver JSON en Consola (F12)</button>
-        </aside>
-    </div>
-
-    <script src="app.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TAMBO POS - Sistema Avanzado en React</title>
+    <!-- Favicon Tambo Colors -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%236f11c7'/><text y='70' x='50' font-size='60' text-anchor='middle' fill='%23ffd600' font-weight='900'>T</text></svg>" />
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
