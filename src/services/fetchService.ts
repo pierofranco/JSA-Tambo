@@ -1,133 +1,77 @@
-import { Producto, Cliente, TicketVenta, RestExecutionResult } from '../types';
-import { getProductosPersistidos, saveProductosPersistidos, CLIENTES_MOCK } from './apiMockData';
+import { MockRestServer } from './mockRestServer';
+import { Producto, Venta } from '../types/pos';
 
 /**
  * SERVICIO REST CON FETCH API
- * Implementación basada en la API nativa de JavaScript / navegadores.
- * Soporta métodos GET, POST, PUT, DELETE, captura de errores HTTP y cabeceras.
+ * Demuestra el uso nativo de Fetch API en React:
+ * - Solicitudes HTTP con promesas nativas
+ * - Headers, métodos GET, POST, PUT, DELETE
+ * - AbortController para cancelación de peticiones
+ * - Transformación y control de errores HTTP
  */
-class FetchService {
-  private baseUrl = 'https://api.tambo-pos.pe/v1';
+export class FetchRestService {
+  private static async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
+    // En una aplicación con servidor externo, se utilizaría:
+    // const res = await fetch(`https://api.tambopos.com${endpoint}`, options);
+    // if (!res.ok) throw new Error(`Fetch error: ${res.statusText}`);
+    // return await res.json();
 
-  /**
-   * Simulación realista de la petición fetch para REST con headers y latencia
-   */
-  private async executeFetch<T>(
-    endpoint: string,
-    metodo: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
-    payload?: any
-  ): Promise<RestExecutionResult<T>> {
-    const startTime = performance.now();
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'X-Client-Library': 'Fetch-API-Native',
-      'X-Requested-With': 'TamboReactPOS'
-    };
-
-    // Simulador de latencia de red (180ms - 350ms)
-    await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * 170) + 180));
-
-    let status = 200;
-    let statusText = 'OK';
-    let data: any = null;
-
-    try {
-      if (endpoint === '/productos' && metodo === 'GET') {
-        data = getProductosPersistidos();
-      } else if (endpoint === '/productos' && metodo === 'POST') {
-        const actual = getProductosPersistidos();
-        const nuevoProd: Producto = {
-          ...payload,
-          id: payload.id || `P${String(actual.length + 1).padStart(3, '0')}`
-        };
-        const actualizados = [nuevoProd, ...actual];
-        saveProductosPersistidos(actualizados);
-        status = 201;
-        statusText = 'Created';
-        data = nuevoProd;
-      } else if (endpoint.startsWith('/productos/') && metodo === 'DELETE') {
-        const id = endpoint.split('/')[2];
-        const actual = getProductosPersistidos();
-        const actualizados = actual.filter(p => p.id !== id);
-        saveProductosPersistidos(actualizados);
-        status = 200;
-        statusText = 'OK';
-        data = { mensaje: `Producto ${id} eliminado correctamente`, id };
-      } else if (endpoint.startsWith('/clientes/')) {
-        const doc = endpoint.split('/')[2];
-        const cliente = CLIENTES_MOCK.find(c => c.numDoc === doc);
-        if (cliente) {
-          data = cliente;
-        } else {
-          status = 404;
-          statusText = 'Not Found';
-          throw new Error(`Cliente con documento ${doc} no encontrado en el padrón`);
-        }
-      } else if (endpoint === '/ventas' && metodo === 'POST') {
-        status = 201;
-        statusText = 'Created';
-        data = {
-          mensaje: 'Venta registrada con éxito vía Fetch API',
-          ticket: payload
-        };
-      } else {
-        status = 400;
-        statusText = 'Bad Request';
-        throw new Error(`Endpoint o método no soportado: ${metodo} ${endpoint}`);
+    // Con nuestro Mock REST Server:
+    if (endpoint.startsWith('/api/productos')) {
+      if (options?.method === 'POST') {
+        const body = JSON.parse(options.body as string);
+        return MockRestServer.createProducto(body) as Promise<T>;
       }
-
-      const tiempoMs = Math.round(performance.now() - startTime);
-
-      return {
-        cliente: 'Fetch API',
-        endpoint: `${this.baseUrl}${endpoint}`,
-        metodo,
-        status,
-        statusText,
-        tiempoMs,
-        timestamp: new Date().toLocaleTimeString(),
-        data,
-        headers
-      };
-    } catch (err: any) {
-      const tiempoMs = Math.round(performance.now() - startTime);
-      return {
-        cliente: 'Fetch API',
-        endpoint: `${this.baseUrl}${endpoint}`,
-        metodo,
-        status: status === 200 ? 500 : status,
-        statusText: statusText === 'OK' ? 'Internal Error' : statusText,
-        tiempoMs,
-        timestamp: new Date().toLocaleTimeString(),
-        data: null as any,
-        headers,
-        error: err.message || 'Error desconocido con Fetch API'
-      };
+      return MockRestServer.getProductos() as Promise<T>;
     }
+    if (endpoint.startsWith('/api/ventas')) {
+      if (options?.method === 'POST') {
+        const body = JSON.parse(options.body as string);
+        return MockRestServer.createVenta(body) as Promise<T>;
+      }
+      return MockRestServer.getVentas() as Promise<T>;
+    }
+    throw new Error(`Endpoint no soportado: ${endpoint}`);
   }
 
-  // Métodos CRUD
-  async getProductos(): Promise<RestExecutionResult<Producto[]>> {
-    return this.executeFetch<Producto[]>('/productos', 'GET');
+  static async getProductos(categoria?: string, search?: string): Promise<Producto[]> {
+    return MockRestServer.getProductos(categoria, search);
   }
 
-  async createProducto(producto: Omit<Producto, 'id'>): Promise<RestExecutionResult<Producto>> {
-    return this.executeFetch<Producto>('/productos', 'POST', producto);
+  static async getProductoById(id: string): Promise<Producto> {
+    return MockRestServer.getProductoById(id);
   }
 
-  async deleteProducto(id: string): Promise<RestExecutionResult<{ mensaje: string; id: string }>> {
-    return this.executeFetch<{ mensaje: string; id: string }>(`/productos/${id}`, 'DELETE');
+  static async createProducto(prod: Omit<Producto, 'id'>): Promise<Producto> {
+    return MockRestServer.createProducto(prod);
   }
 
-  async getClientePorDoc(numDoc: string): Promise<RestExecutionResult<Cliente>> {
-    return this.executeFetch<Cliente>(`/clientes/${numDoc}`, 'GET');
+  static async updateProducto(id: string, updates: Partial<Producto>): Promise<Producto> {
+    return MockRestServer.updateProducto(id, updates);
   }
 
-  async registrarVenta(ticket: TicketVenta): Promise<RestExecutionResult<any>> {
-    return this.executeFetch<any>('/ventas', 'POST', ticket);
+  static async deleteProducto(id: string): Promise<{ success: boolean; id: string }> {
+    return MockRestServer.deleteProducto(id);
+  }
+
+  static async getVentas(): Promise<Venta[]> {
+    return MockRestServer.getVentas();
+  }
+
+  static async createVenta(venta: Omit<Venta, 'id' | 'correlativo' | 'fecha' | 'hora'>): Promise<Venta> {
+    return MockRestServer.createVenta(venta);
+  }
+
+  static async validarCupon(codigo: string) {
+    return MockRestServer.validarCupon(codigo);
+  }
+
+  static async consultarRuc(ruc: string) {
+    return MockRestServer.consultarRucSunat(ruc);
+  }
+
+  static async consultarDni(dni: string) {
+    return MockRestServer.consultarDniReniec(dni);
   }
 }
-
-export const fetchService = new FetchService();
 

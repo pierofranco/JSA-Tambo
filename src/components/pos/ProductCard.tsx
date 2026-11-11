@@ -1,104 +1,131 @@
 import React from 'react';
-import { Producto } from '../../types';
-import { useCart } from '../../hooks/useCart';
+import { Card, Button, Badge } from 'react-bootstrap';
+import { Producto } from '../../types/pos';
+import { usePos } from '../../context/PosContext';
+import { UMBRAL_STOCK_BAJO } from '../../data/initialProducts';
 
 interface ProductCardProps {
   producto: Producto;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ producto }) => {
-  const { items, agregarAlCarrito, cambiarCantidad } = useCart();
+  const { cart, agregarAlCarrito, cambiarCantidadCarrito } = usePos();
 
-  const itemEnCarrito = items.find(i => i.id === producto.id);
-  const cantidad = itemEnCarrito ? itemEnCarrito.cantidad : 0;
+  const itemEnCarrito = cart.find((i) => i.id === producto.id);
+  const cantidadEnCarrito = itemEnCarrito ? itemEnCarrito.cantidad : 0;
   const tieneDescuento = producto.porcentajeDescuento > 0;
-  const sinStock = producto.stock <= 0;
+  const isAgotado = producto.stock === 0;
+  const isStockBajo = producto.stock > 0 && producto.stock < UMBRAL_STOCK_BAJO;
+
+  const handleAdd = () => {
+    agregarAlCarrito(producto);
+  };
+
+  const handleIncrement = () => {
+    cambiarCantidadCarrito(producto.id, 1);
+  };
+
+  const handleDecrement = () => {
+    cambiarCantidadCarrito(producto.id, -1);
+  };
 
   return (
-    <div className="product-card h-100">
-      {/* Badges de producto */}
-      <div className="position-absolute top-0 start-0 p-2 d-flex flex-column gap-1" style={{ zIndex: 2 }}>
-        {producto.esPrime && <span className="badge-prime shadow-sm">PRIME</span>}
+    <Card className={`tambo-product-card h-100 shadow-sm border-0 ${isAgotado ? 'producto-agotado' : ''}`}>
+      {/* Badges superiores (Prime / Descuento) */}
+      <div className="product-badges-wrapper">
+        {producto.esPrime && (
+          <Badge bg="danger" className="badge-prime text-uppercase fw-bold">
+            PRIME
+          </Badge>
+        )}
         {tieneDescuento && (
-          <span className="badge-descuento shadow-sm">
+          <Badge bg="warning" text="dark" className="badge-descuento fw-bold">
             -{producto.porcentajeDescuento}%
-          </span>
+          </Badge>
         )}
       </div>
 
-      {/* Imagen */}
-      <div className="product-img-wrapper">
-        <img
+      {/* Badge de Stock */}
+      <div className="stock-badge-container">
+        {isAgotado ? (
+          <span className="stock-pill stock-pill-agotado">Agotado</span>
+        ) : isStockBajo ? (
+          <span className="stock-pill stock-pill-bajo">Stock Bajo ({producto.stock})</span>
+        ) : (
+          <span className="stock-pill stock-pill-alto">Stock ({producto.stock})</span>
+        )}
+      </div>
+
+      {/* Imagen del producto */}
+      <div className="card-img-wrapper">
+        <Card.Img
+          variant="top"
           src={producto.imagenUrl}
           alt={producto.nombre}
           loading="lazy"
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&q=80';
+          onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = '/assets/img/default.jpg';
           }}
         />
-        <span className="position-absolute bottom-0 end-0 bg-dark bg-opacity-75 text-white px-2 py-0 rounded-start small" style={{ fontSize: '0.72rem' }}>
-          Stock: {producto.stock}
-        </span>
       </div>
 
-      {/* Info */}
-      <div className="p-3 d-flex flex-column flex-grow-1">
-        <span className="text-muted small text-uppercase fw-semibold" style={{ fontSize: '0.7rem' }}>
-          {producto.categoria}
-        </span>
-        <h6 className="fw-semibold text-dark mb-2 text-truncate" title={producto.nombre}>
+      <Card.Body className="d-flex flex-column justify-content-between p-3">
+        <Card.Title className="product-title" title={producto.nombre}>
           {producto.nombre}
-        </h6>
+        </Card.Title>
 
-        {/* Footer: Precios y botón/contador */}
-        <div className="mt-auto pt-2 d-flex align-items-center justify-content-between border-top">
-          <div>
-            <div className="fw-bold text-tambo-purple fs-6">
-              S/ {producto.precioOferta.toFixed(2)}
-            </div>
+        <div className="d-flex justify-content-between align-items-end mt-2 pt-2 border-top">
+          {/* Precios */}
+          <div className="precios-box">
+            <span className="precio-oferta">S/ {producto.precioOferta.toFixed(2)}</span>
             {tieneDescuento && (
-              <small className="text-muted text-decoration-line-through" style={{ fontSize: '0.75rem' }}>
-                S/ {producto.precioRegular.toFixed(2)}
-              </small>
+              <span className="precio-tachado">S/ {producto.precioRegular.toFixed(2)}</span>
             )}
           </div>
 
-          <div>
-            {sinStock ? (
-              <span className="badge bg-secondary">Agotado</span>
-            ) : cantidad === 0 ? (
-              <button
-                className="btn btn-tambo-purple rounded-circle d-flex align-items-center justify-content-center shadow-sm"
-                style={{ width: '36px', height: '36px' }}
-                onClick={() => agregarAlCarrito(producto)}
+          {/* Botones de acción / Contador Tambo */}
+          <div className="accion-box">
+            {isAgotado ? (
+              <span className="text-muted small fw-semibold">Sin stock</span>
+            ) : cantidadEnCarrito === 0 ? (
+              <Button
+                variant="warning"
+                size="sm"
+                className="btn-add-item rounded-circle"
+                onClick={handleAdd}
                 title="Agregar al carrito"
               >
-                <i className="bi bi-plus-lg fs-6"></i>
-              </button>
+                <i className="bi bi-plus-lg"></i>
+              </Button>
             ) : (
-              <div className="counter-tambo">
-                <button
-                  type="button"
-                  onClick={() => cambiarCantidad(producto.id, -1)}
-                  title="Disminuir"
+              <div className="tambo-counter-group d-flex align-items-center">
+                <Button
+                  variant="outline-secondary"
+                  size="sm"
+                  className="btn-counter-action"
+                  onClick={handleDecrement}
+                  title="Disminuir / Eliminar"
                 >
-                  <i className="bi bi-dash"></i>
-                </button>
-                <span className="fw-bold px-1 small">{cantidad}</span>
-                <button
-                  type="button"
-                  onClick={() => cambiarCantidad(producto.id, 1)}
-                  disabled={cantidad >= producto.stock}
+                  {cantidadEnCarrito === 1 ? <i className="bi bi-trash"></i> : <i className="bi bi-dash"></i>}
+                </Button>
+                <span className="counter-value px-2 fw-bold">{cantidadEnCarrito}</span>
+                <Button
+                  variant="outline-secondary"
+                  size="sm"
+                  className="btn-counter-action"
+                  onClick={handleIncrement}
+                  disabled={cantidadEnCarrito >= producto.stock}
                   title="Aumentar"
                 >
                   <i className="bi bi-plus"></i>
-                </button>
+                </Button>
               </div>
             )}
           </div>
         </div>
-      </div>
-    </div>
+      </Card.Body>
+    </Card>
   );
 };
 

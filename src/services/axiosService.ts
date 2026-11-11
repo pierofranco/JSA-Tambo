@@ -1,164 +1,87 @@
-import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
-import { Producto, Cliente, TicketVenta, RestExecutionResult } from '../types';
-import { getProductosPersistidos, saveProductosPersistidos, CLIENTES_MOCK } from './apiMockData';
+import axios, { AxiosInstance } from 'axios';
+import { MockRestServer } from './mockRestServer';
+import { Producto, Venta } from '../types/pos';
 
 /**
  * SERVICIO REST CON AXIOS
- * Implementación empleando la librería cliente Axios, con interceptores de
- * solicitud, interceptores de respuesta, timeouts y normalización de errores.
+ * Demuestra el uso de Axios en React:
+ * - Instancia personalizada (AxiosInstance)
+ * - Interceptores de solicitud (Request) y respuesta (Response)
+ * - Manejo automático de serialización JSON y timeouts
+ * - Medición de tiempos de respuesta / latencia
  */
-class AxiosService {
-  private client: AxiosInstance;
-  private baseUrl = 'https://api.tambo-pos.pe/v1';
+export const axiosClient: AxiosInstance = axios.create({
+  baseURL: 'https://api.tambopos.com/v1',
+  timeout: 5000,
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'X-Client-Agent': 'TamboPOS-React-Axios'
+  }
+});
 
-  constructor() {
-    this.client = axios.create({
-      baseURL: this.baseUrl,
-      timeout: 5000,
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Client-Library': 'Axios-HTTP-Client'
-      }
-    });
+// Interceptor de Request para agregar tokens o logs
+axiosClient.interceptors.request.use(
+  (config) => {
+    (config as any).metadata = { startTime: performance.now() };
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
-    // 1. Interceptor de Petición (Request Interceptor)
-    this.client.interceptors.request.use(
-      (config: InternalAxiosRequestConfig) => {
-        // Inyectamos token ficticio de sesión POS
-        config.headers.set('Authorization', 'Bearer tambo_pos_token_sec_2026');
-        (config as any).metadata = { startTime: performance.now() };
-        return config;
-      },
-      (error) => Promise.reject(error)
-    );
+// Interceptor de Response para registrar telemetría
+axiosClient.interceptors.response.use(
+  (response) => {
+    const start = (response.config as any).metadata?.startTime || 0;
+    const duration = Math.round(performance.now() - start);
+    console.debug(`[Axios ${response.config.method?.toUpperCase()} ${response.config.url}] completado en ${duration}ms`);
+    return response;
+  },
+  (error) => {
+    console.error('[Axios Error Interceptor]', error.message);
+    return Promise.reject(error);
+  }
+);
 
-    // 2. Interceptor de Respuesta (Response Interceptor)
-    this.client.interceptors.response.use(
-      (response: AxiosResponse) => {
-        return response;
-      },
-      (error) => {
-        // Manejo centralizado de errores Axios
-        console.warn('[Axios Interceptor Error]:', error.message);
-        return Promise.reject(error);
-      }
-    );
+export class AxiosRestService {
+  static async getProductos(categoria?: string, search?: string): Promise<Producto[]> {
+    // Al usar mock server respaldado:
+    return MockRestServer.getProductos(categoria, search);
   }
 
-  /**
-   * Ejecutor simulador con soporte de interceptores reales
-   */
-  private async executeAxios<T>(
-    endpoint: string,
-    metodo: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
-    payload?: any
-  ): Promise<RestExecutionResult<T>> {
-    const startTime = performance.now();
-    await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * 150) + 160));
-
-    let status = 200;
-    let statusText = 'OK';
-    let data: any = null;
-
-    try {
-      if (endpoint === '/productos' && metodo === 'GET') {
-        data = getProductosPersistidos();
-      } else if (endpoint === '/productos' && metodo === 'POST') {
-        const actual = getProductosPersistidos();
-        const nuevoProd: Producto = {
-          ...payload,
-          id: payload.id || `P${String(actual.length + 1).padStart(3, '0')}`
-        };
-        const actualizados = [nuevoProd, ...actual];
-        saveProductosPersistidos(actualizados);
-        status = 201;
-        statusText = 'Created';
-        data = nuevoProd;
-      } else if (endpoint.startsWith('/productos/') && metodo === 'DELETE') {
-        const id = endpoint.split('/')[2];
-        const actual = getProductosPersistidos();
-        const actualizados = actual.filter(p => p.id !== id);
-        saveProductosPersistidos(actualizados);
-        status = 200;
-        statusText = 'OK';
-        data = { mensaje: `Producto ${id} eliminado con éxito vía Axios`, id };
-      } else if (endpoint.startsWith('/clientes/')) {
-        const doc = endpoint.split('/')[2];
-        const cliente = CLIENTES_MOCK.find(c => c.numDoc === doc);
-        if (cliente) {
-          data = cliente;
-        } else {
-          status = 404;
-          statusText = 'Not Found';
-          throw new Error(`[Axios Error 404] Cliente con documento ${doc} no hallado en padrón`);
-        }
-      } else if (endpoint === '/ventas' && metodo === 'POST') {
-        status = 201;
-        statusText = 'Created';
-        data = {
-          mensaje: 'Venta registrada con éxito mediante Axios Interceptors',
-          ticket: payload
-        };
-      } else {
-        status = 400;
-        statusText = 'Bad Request';
-        throw new Error(`Endpoint Axios no soportado: ${metodo} ${endpoint}`);
-      }
-
-      const tiempoMs = Math.round(performance.now() - startTime);
-
-      return {
-        cliente: 'Axios',
-        endpoint: `${this.baseUrl}${endpoint}`,
-        metodo,
-        status,
-        statusText,
-        tiempoMs,
-        timestamp: new Date().toLocaleTimeString(),
-        data,
-        headers: {
-          'Authorization': 'Bearer tambo_pos_token_sec_2026',
-          'Content-Type': 'application/json',
-          'X-Client-Library': 'Axios-HTTP-Client'
-        }
-      };
-    } catch (err: any) {
-      const tiempoMs = Math.round(performance.now() - startTime);
-      return {
-        cliente: 'Axios',
-        endpoint: `${this.baseUrl}${endpoint}`,
-        metodo,
-        status: status === 200 ? 500 : status,
-        statusText: statusText === 'OK' ? 'Axios Network Error' : statusText,
-        tiempoMs,
-        timestamp: new Date().toLocaleTimeString(),
-        data: null as any,
-        headers: { 'X-Client-Library': 'Axios-HTTP-Client' },
-        error: err.message || 'Error en petición Axios'
-      };
-    }
+  static async getProductoById(id: string): Promise<Producto> {
+    return MockRestServer.getProductoById(id);
   }
 
-  async getProductos(): Promise<RestExecutionResult<Producto[]>> {
-    return this.executeAxios<Producto[]>('/productos', 'GET');
+  static async createProducto(prod: Omit<Producto, 'id'>): Promise<Producto> {
+    return MockRestServer.createProducto(prod);
   }
 
-  async createProducto(producto: Omit<Producto, 'id'>): Promise<RestExecutionResult<Producto>> {
-    return this.executeAxios<Producto>('/productos', 'POST', producto);
+  static async updateProducto(id: string, updates: Partial<Producto>): Promise<Producto> {
+    return MockRestServer.updateProducto(id, updates);
   }
 
-  async deleteProducto(id: string): Promise<RestExecutionResult<{ mensaje: string; id: string }>> {
-    return this.executeAxios<{ mensaje: string; id: string }>(`/productos/${id}`, 'DELETE');
+  static async deleteProducto(id: string): Promise<{ success: boolean; id: string }> {
+    return MockRestServer.deleteProducto(id);
   }
 
-  async getClientePorDoc(numDoc: string): Promise<RestExecutionResult<Cliente>> {
-    return this.executeAxios<Cliente>(`/clientes/${numDoc}`, 'GET');
+  static async getVentas(): Promise<Venta[]> {
+    return MockRestServer.getVentas();
   }
 
-  async registrarVenta(ticket: TicketVenta): Promise<RestExecutionResult<any>> {
-    return this.executeAxios<any>('/ventas', 'POST', ticket);
+  static async createVenta(venta: Omit<Venta, 'id' | 'correlativo' | 'fecha' | 'hora'>): Promise<Venta> {
+    return MockRestServer.createVenta(venta);
+  }
+
+  static async validarCupon(codigo: string) {
+    return MockRestServer.validarCupon(codigo);
+  }
+
+  static async consultarRuc(ruc: string) {
+    return MockRestServer.consultarRucSunat(ruc);
+  }
+
+  static async consultarDni(dni: string) {
+    return MockRestServer.consultarDniReniec(dni);
   }
 }
-
-export const axiosService = new AxiosService();
-

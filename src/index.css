@@ -1,190 +1,358 @@
-/* Importación de Bootstrap y Bootstrap Icons */
-@import 'bootstrap/dist/css/bootstrap.min.css';
-@import 'bootstrap-icons/font/bootstrap-icons.css';
+/* ============================================================
+   TAMBOPOS - PALETA CORPORATIVA Y ESTILOS GLOBALES
+   ============================================================ */
 
 :root {
-  --tambo-purple: #6f11c7;
-  --tambo-purple-dark: #4b078a;
-  --tambo-purple-light: #8f36ea;
-  --tambo-yellow: #ffd600;
-  --tambo-yellow-hover: #ffc400;
-  --tambo-bg: #f5f6fa;
-  --tambo-card-bg: #ffffff;
-  --tambo-text: #2d3436;
+  --tambo-purple: #6c2d82;
+  --tambo-purple-dark: #4a1d5a;
+  --tambo-purple-subtle: #f5edf8;
+  --tambo-yellow: #ffea28;
+  --tambo-yellow-hover: #f0dc16;
+  --tambo-yellow-subtle: #fffde0;
+  --tambo-dark: #1f1f1f;
+  --tambo-gray-bg: #f8f9fa;
+  --tambo-border: #e2e8f0;
 }
 
 body {
   margin: 0;
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: var(--tambo-bg);
-  color: var(--tambo-text);
-  min-height: 100vh;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--tambo-gray-bg);
+  color: var(--tambo-dark);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Marca Tambo */
-.bg-tambo-purple {
-  background: linear-gradient(135deg, var(--tambo-purple-dark) 0%, var(--tambo-purple) 100%) !important;
-}
+/* ============================================================
+   COLORES PERSONALIZADOS & CLASES BOOTSTRAP ADICIONALES
+   ============================================================ */
 
-.text-tambo-purple {
+.text-purple {
   color: var(--tambo-purple) !important;
 }
 
-.bg-tambo-yellow {
-  background-color: var(--tambo-yellow) !important;
-  color: #111 !important;
+.bg-purple {
+  background-color: var(--tambo-purple) !important;
+  color: #fff !important;
 }
 
-.text-tambo-yellow {
-  color: var(--tambo-yellow) !important;
+.bg-purple-dark {
+  background-color: var(--tambo-purple-dark) !important;
 }
 
-.btn-tambo-yellow {
-  background-color: var(--tambo-yellow);
-  color: #111;
-  font-weight: 700;
-  border: none;
-  transition: all 0.2s ease-in-out;
+.bg-purple-subtle {
+  background-color: var(--tambo-purple-subtle) !important;
 }
 
-.btn-tambo-yellow:hover {
-  background-color: var(--tambo-yellow-hover);
-  color: #000;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 214, 0, 0.4);
-}
-
-.btn-tambo-purple {
-  background: var(--tambo-purple);
-  color: #fff;
-  font-weight: 600;
-  border: none;
-  transition: all 0.2s ease-in-out;
-}
-
-.btn-tambo-purple:hover {
-  background: var(--tambo-purple-dark);
-  color: #fff;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(111, 17, 199, 0.35);
-}
-
-/* Tarjetas de Producto */
-.product-card {
-  border-radius: 14px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  background: #fff;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.product-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 20px rgba(111, 17, 199, 0.09);
-}
-
-.product-img-wrapper {
-  position: relative;
-  height: 150px;
-  background-color: #f8f9fa;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.product-img-wrapper img {
-  max-height: 100%;
-  width: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.product-card:hover .product-img-wrapper img {
-  transform: scale(1.05);
-}
-
-.badge-prime {
-  background: linear-gradient(135deg, #ff8c00, #ff007f);
-  color: white;
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  padding: 3px 8px;
-  border-radius: 20px;
-}
-
-.badge-descuento {
-  background-color: #e63946;
-  color: white;
-  font-weight: 700;
-  font-size: 0.72rem;
-  padding: 3px 7px;
-  border-radius: 6px;
-}
-
-/* Contadores y Botones POS */
-.counter-tambo {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: #f1f2f6;
-  padding: 3px 6px;
-  border-radius: 20px;
-  border: 1px solid #dfe4ea;
-}
-
-.counter-tambo button {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: none;
-  background: #fff;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.counter-tambo button:hover {
-  background: var(--tambo-purple);
+.btn-purple {
+  background-color: var(--tambo-purple);
+  border-color: var(--tambo-purple);
   color: #fff;
 }
 
-/* Ticket de Venta POS Monospace */
-.ticket-terminal {
-  font-family: 'JetBrains Mono', 'Courier New', Courier, monospace;
-  background-color: #1e1e24;
-  color: #a8ff78;
-  padding: 1.2rem;
-  border-radius: 10px;
-  font-size: 0.85rem;
-  line-height: 1.4;
-  white-space: pre;
-  overflow-x: auto;
-  border-left: 4px solid var(--tambo-yellow);
+.btn-purple:hover,
+.btn-purple:focus {
+  background-color: var(--tambo-purple-dark);
+  border-color: var(--tambo-purple-dark);
+  color: #fff;
 }
 
-/* Navegación activa */
-.nav-link.active-tambo {
-  color: var(--tambo-yellow) !important;
-  font-weight: 700;
+.btn-outline-purple {
+  color: var(--tambo-purple);
+  border-color: var(--tambo-purple);
+}
+
+.btn-outline-purple:hover,
+.btn-outline-purple:focus,
+.btn-outline-purple.active {
+  background-color: var(--tambo-purple);
+  border-color: var(--tambo-purple);
+  color: #fff;
+}
+
+.border-purple {
+  border-color: var(--tambo-purple) !important;
+}
+
+/* ============================================================
+   NAVBAR TAMBO
+   ============================================================ */
+
+.tambo-navbar {
+  background-color: var(--tambo-purple) !important;
   border-bottom: 3px solid var(--tambo-yellow);
 }
 
-/* Bloques de código format */
-pre.code-block {
-  font-family: 'JetBrains Mono', monospace;
-  background: #212529;
-  color: #f8f9fa;
-  padding: 1rem;
+.brand-icon {
+  font-size: 1.8rem;
+}
+
+.brand-name {
+  font-weight: 800;
+  font-size: 1.3rem;
+  letter-spacing: 1px;
+  color: var(--tambo-yellow);
+  line-height: 1;
+}
+
+.brand-tagline {
+  font-size: 0.68rem;
+  color: #ffffff;
+  opacity: 0.85;
+}
+
+.tambo-nav-link {
+  color: rgba(255, 255, 255, 0.85) !important;
+  font-weight: 500;
+  padding: 0.5rem 0.8rem !important;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.tambo-nav-link:hover {
+  color: var(--tambo-yellow) !important;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.tambo-nav-link.active {
+  color: var(--tambo-dark) !important;
+  background-color: var(--tambo-yellow) !important;
+  font-weight: 700;
+}
+
+/* ============================================================
+   TARJETAS DE PRODUCTOS (ProductCard)
+   ============================================================ */
+
+.tambo-product-card {
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+  border-radius: 12px;
+  background-color: #fff;
+}
+
+.tambo-product-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08) !important;
+}
+
+.tambo-product-card.producto-agotado {
+  opacity: 0.65;
+  filter: grayscale(70%);
+}
+
+.product-badges-wrapper {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 2;
+}
+
+.stock-badge-container {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+}
+
+.stock-pill {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.stock-pill-alto {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #c8e6c9;
+}
+
+.stock-pill-bajo {
+  background-color: #ffebee;
+  color: #c62828;
+  border: 1px solid #ffcdd2;
+}
+
+.stock-pill-agotado {
+  background-color: #eceff1;
+  color: #546e7a;
+  border: 1px solid #cfd8dc;
+}
+
+.card-img-wrapper {
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  background-color: #fafafa;
+}
+
+.card-img-wrapper img {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.product-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.3;
+  min-height: 38px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 0;
+}
+
+.precios-box .precio-oferta {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--tambo-purple);
+  display: block;
+  line-height: 1.1;
+}
+
+.precios-box .precio-tachado {
+  font-size: 0.72rem;
+  color: #888;
+  text-decoration: line-through;
+}
+
+.btn-add-item {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: var(--tambo-purple);
+  background-color: var(--tambo-yellow);
+  border: none;
+}
+
+.btn-add-item:hover {
+  background-color: var(--tambo-yellow-hover);
+  color: var(--tambo-purple-dark);
+}
+
+.tambo-counter-group .btn-counter-action {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.tambo-counter-group .counter-value {
+  font-size: 0.9rem;
+  color: var(--tambo-purple);
+}
+
+/* ============================================================
+   CARRITO Y CHECKOUT
+   ============================================================ */
+
+.cart-card {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.cart-items-scroll {
+  max-height: 240px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.cart-item-row .item-title {
+  font-size: 0.83rem;
+  color: #333;
+}
+
+/* ============================================================
+   TICKET TÉRMICO
+   ============================================================ */
+
+.thermal-ticket-container {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  background-color: #fff;
+  border: 1px dashed #bbb;
+  padding: 16px 14px;
+  color: #111;
+  font-size: 11.5px;
+  border-radius: 4px;
+}
+
+.ticket-store-name {
+  font-weight: 800;
+  font-size: 1.25rem;
+  color: #000;
+  letter-spacing: 1px;
+}
+
+.ticket-dash {
+  font-family: monospace;
+  letter-spacing: -1px;
+  color: #777;
+  overflow: hidden;
+  white-space: nowrap;
+  margin: 3px 0;
+}
+
+.barcode-simulator {
+  letter-spacing: 2px;
+  font-weight: bold;
+}
+
+/* ============================================================
+   ADMIN TABS & DASHBOARD
+   ============================================================ */
+
+.admin-nav-tabs .nav-link {
+  color: var(--tambo-purple);
+  font-weight: 600;
   border-radius: 8px;
-  font-size: 0.84rem;
-  overflow-x: auto;
+  padding: 8px 16px;
+}
+
+.admin-nav-tabs .nav-link.active {
+  background-color: var(--tambo-purple);
+  color: #fff;
+}
+
+.kpi-card {
+  border-radius: 12px;
+}
+
+.kpi-icon-box {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============================================================
+   PESTAÑAS GUÍA EDUCATIVA
+   ============================================================ */
+
+.tambo-tabs .nav-link {
+  font-weight: 600;
+  color: var(--tambo-purple);
+}
+
+.tambo-tabs .nav-link.active {
+  color: var(--tambo-purple);
+  border-bottom: 3px solid var(--tambo-purple);
 }
 

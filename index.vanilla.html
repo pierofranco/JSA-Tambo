@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TAMBOPOS - Sistema POS</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <!-- ATAJOS PARA CELULAR (solo visibles en Vista Cajero) -->
+    <nav class="atajos-moviles" id="atajosMoviles">
+        <a href="#gridProductos" title="Ir a productos">🛍️</a>
+        <a href="#seccionCarrito" title="Ir al carrito">🛒</a>
+    </nav>
+
+    <header class="main-header">
+
+        <div class="header-titulo">
+            <h1>TAMBOPOS</h1>
+            <p>Sistema POS Activo</p>
+        </div>
+
+        <div id="rolActivoIndicador" class="rol-indicador oculto">
+            <span id="lblRolActivo"></span>
+            <button type="button" onclick="cerrarSesionRol()" class="btn-cambiar-rol">
+                Cambiar de rol
+            </button>
+        </div>
+
+    </header>
+
+    <!-- ============================================
+         SELECTOR DE ROL (pantalla inicial)
+         ============================================ -->
+    <section id="vistaSelectorRol" class="selector-rol">
+
+        <div class="selector-rol-card">
+
+            <h2>Bienvenido a TAMBOPOS</h2>
+            <p>Selecciona cómo deseas ingresar al sistema</p>
+
+            <div class="selector-rol-botones">
+
+                <button
+                    type="button"
+                    class="btn-rol btn-rol-cajero"
+                    onclick="entrarComoCajero()"
+                >
+                    🧑‍💼
+                    <span>Ingresar como Cajero</span>
+                </button>
+
+                <button
+                    type="button"
+                    class="btn-rol btn-rol-admin"
+                    onclick="mostrarLoginAdmin()"
+                >
+                    🔐
+                    <span>Ingresar como Administrador</span>
+                </button>
+
+            </div>
+
+            <div id="loginAdminBox" class="login-admin-box oculto">
+
+                <label for="txtPinAdmin">PIN de Administrador:</label>
+
+                <input
+                    type="password"
+                    id="txtPinAdmin"
+                    placeholder="••••"
+                    maxlength="6"
+                    inputmode="numeric"
+                    autocomplete="off"
+                >
+
+                <button
+                    type="button"
+                    class="btn-primario block"
+                    onclick="entrarComoAdmin()"
+                >
+                    Ingresar
+                </button>
+
+                <small id="mensajePinAdmin" class="mensaje-pin"></small>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- ============================================
+         VISTA CAJERO
+         ============================================ -->
+    <div class="container oculto" id="vistaCajero">
+
+        <!-- COLUMNA IZQUIERDA -->
+        <main class="left-panel">
+
+            <div class="card">
+                <h2>Búsqueda y Filtros</h2>
+
+                <div class="filter-box">
+                    <label for="selectCategoria">Categoría:</label>
+
+                    <select id="selectCategoria" onchange="filtrarPorCategoria()">
+                        <option value="TODAS">Todas las categorías</option>
+                        <option value="Bebidas">Bebidas</option>
+                        <option value="Snacks">Snacks</option>
+                        <option value="Comida Rápida">Comida Rápida</option>
+                        <option value="Abarrotes">Abarrotes</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Catálogo de Productos</h2>
+
+                <div class="leyenda-stock">
+                    <span class="leyenda-item"><i class="punto punto-azul"></i> Stock ≥ 15</span>
+                    <span class="leyenda-item"><i class="punto punto-rojo"></i> Stock &lt; 15</span>
+                    <span class="leyenda-item"><i class="punto punto-gris"></i> Agotado</span>
+                </div>
+
+                <div id="gridProductos" class="grid-productos"></div>
+            </div>
+
+        </main>
+
+        <!-- COLUMNA DERECHA -->
+        <aside class="right-panel">
+
+            <div class="card" id="seccionCarrito">
+
+                <h2>
+                    Tu Carrito
+                    <span id="lblCantidadCarrito">(0)</span>
+                </h2>
+
+                <div id="tblCarritoBody" class="carrito-lista"></div>
+
+                <!-- COMPROBANTE -->
+                <div class="cliente-box">
+
+                    <label for="selectTipoComprobante">Tipo de Comprobante:</label>
+
+                    <select id="selectTipoComprobante">
+                        <option value="BOLETA">Boleta de Venta</option>
+                        <option value="FACTURA">Factura</option>
+                    </select>
+
+                    <!-- CAMPOS BOLETA -->
+                    <div id="camposBoleta" class="subcampos-comprobante">
+
+                        <label for="selectTipoDoc">Documento del Cliente (Opcional):</label>
+
+                        <select id="selectTipoDoc">
+                            <option value="SIN_DOC">Sin documento (Cliente Varios)</option>
+                            <option value="DNI">DNI</option>
+                            <option value="CE">Carné de Extranjería</option>
+                        </select>
+
+                        <label for="txtDni">N° Documento:</label>
+
+                        <input
+                            type="text"
+                            id="txtDni"
+                            placeholder="No requerido"
+                            inputmode="numeric"
+                            autocomplete="off"
+                        >
+
+                        <small id="mensajeDocumento" class="mensaje-documento">
+                            Venta sin documento (Cliente Varios).
+                        </small>
+
+                    </div>
+
+                    <!-- CAMPOS FACTURA -->
+                    <div id="camposFactura" class="subcampos-comprobante oculto">
+
+                        <label for="txtRuc">RUC (11 dígitos):</label>
+
+                        <input
+                            type="text"
+                            id="txtRuc"
+                            placeholder="Ej: 20123456789"
+                            inputmode="numeric"
+                            autocomplete="off"
+                            maxlength="11"
+                        >
+
+                        <label for="txtRazonSocial">Razón Social:</label>
+
+                        <input
+                            type="text"
+                            id="txtRazonSocial"
+                            placeholder="Ej: Comercial ABC S.A.C."
+                            autocomplete="off"
+                        >
+
+                    </div>
+
+                </div>
+
+                <!-- CUPONES -->
+                <div class="cupon-box">
+
+                    <button
+                        type="button"
+                        id="btnCupon"
+                        class="btn-cupon"
+                        onclick="alternarCupones()"
+                    >
+                        🎟️ ¿Cupones?
+                    </button>
+
+                    <div id="campoCupon" class="campo-cupon oculto">
+
+                        <label for="txtCupon">
+                            Inserte el número de cupón
+                        </label>
+
+                        <div class="cupon-input-grupo">
+
+                            <input
+                                type="text"
+                                id="txtCupon"
+                                placeholder="Ej: 18892"
+                                inputmode="numeric"
+                                autocomplete="off"
+                            >
+
+                            <button
+                                type="button"
+                                id="btnAplicarCupon"
+                                class="btn-aplicar-cupon"
+                                onclick="aplicarCupon()"
+                            >
+                                Aplicar
+                            </button>
+
+                            <button
+                                type="button"
+                                id="btnQuitarCupon"
+                                class="btn-quitar-cupon oculto"
+                                onclick="quitarCupon()"
+                            >
+                                Quitar
+                            </button>
+
+                        </div>
+
+                        <small id="mensajeCupon" class="mensaje-cupon"></small>
+
+                    </div>
+
+                </div>
+
+                <!-- TOTALES -->
+                <div class="totales-box-tambo">
+
+                    <div class="linea-total">
+                        <span>Total Productos</span>
+                        <span id="lblTotalProductos">S/ 0.00</span>
+                    </div>
+
+                    <div class="linea-total descuento">
+                        <span>Descuentos</span>
+                        <span id="lblDescuentoTotal">- S/ 0.00</span>
+                    </div>
+
+                    <div class="linea-total subtotal">
+                        <strong>Subtotal</strong>
+                        <strong id="lblSubtotalFinal">S/ 0.00</strong>
+                    </div>
+
+                </div>
+
+                <button
+                    onclick="procesarPago()"
+                    class="btn-primario block"
+                >
+                    Procesar Pago
+                </button>
+
+            </div>
+
+            <!-- COMPROBANTE EMITIDO -->
+            <div class="card">
+
+                <h2>Comprobante Emitido</h2>
+
+                <div id="salidaTicket" class="ticket-output-wrapper">
+                    <p class="ticket-vacio">
+                        Complete una venta para generar el comprobante...
+                    </p>
+                </div>
+
+                <button
+                    onclick="imprimirTicket()"
+                    class="btn-secundario block"
+                >
+                    🖨️ Imprimir Ticket
+                </button>
+
+            </div>
+
+            <button
+                onclick="exportarEImprimirJSON()"
+                class="btn-json"
+            >
+                Ver JSON en Consola (F12)
+            </button>
+
+        </aside>
+
+    </div>
+
+    <!-- ============================================
+         VISTA ADMINISTRADOR (DASHBOARD SAAS)
+         ============================================ -->
+    <div class="admin-layout oculto" id="vistaAdmin">
+
+        <aside class="admin-sidebar">
+
+            <div class="admin-logo">
+                <span class="admin-logo-icon">🏪</span>
+                <span>TAMBOPOS</span>
+            </div>
+
+            <nav class="admin-nav">
+
+                <button type="button" class="admin-nav-item activo" data-tab="resumen" onclick="cambiarTabAdmin('resumen')">
+                    📊 Resumen General
+                </button>
+
+                <button type="button" class="admin-nav-item" data-tab="inventario" onclick="cambiarTabAdmin('inventario')">
+                    📦 Gestión de Inventario
+                </button>
+
+                <button type="button" class="admin-nav-item" data-tab="ventas" onclick="cambiarTabAdmin('ventas')">
+                    🧾 Historial de Ventas
+                </button>
+
+            </nav>
+
+            <button type="button" class="btn-modo-cajero" onclick="entrarComoCajero()">
+                🧑‍💼 Cambiar a Modo Cajero
+            </button>
+
+        </aside>
+
+        <main class="admin-main">
+
+            <!-- ===== TAB: RESUMEN GENERAL ===== -->
+            <section class="admin-tab" id="tabResumen">
+
+                <h2 class="admin-tab-titulo">Resumen General</h2>
+
+                <div class="kpi-grid">
+
+                    <div class="kpi-card">
+                        <span class="kpi-label">Ventas del Día</span>
+                        <strong class="kpi-valor" id="kpiVentasDia">S/ 0.00</strong>
+                    </div>
+
+                    <div class="kpi-card">
+                        <span class="kpi-label">Ticket Promedio</span>
+                        <strong class="kpi-valor" id="kpiTicketPromedio">S/ 0.00</strong>
+                    </div>
+
+                    <div class="kpi-card">
+                        <span class="kpi-label">IGV Recaudado (18%)</span>
+                        <strong class="kpi-valor" id="kpiIgvRecaudado">S/ 0.00</strong>
+                    </div>
+
+                    <div class="kpi-card kpi-alerta">
+                        <span class="kpi-label">Alertas de Stock Bajo</span>
+                        <strong class="kpi-valor" id="kpiStockBajo">0</strong>
+                    </div>
+
+                </div>
+
+                <div class="analytics-grid">
+
+                    <div class="analytics-card">
+                        <h3>🏆 Top 5 Productos Más Vendidos</h3>
+                        <div id="topProductosLista" class="top-productos-lista">
+                            <p class="sin-datos">Aún no hay ventas registradas.</p>
+                        </div>
+                    </div>
+
+                    <div class="analytics-card">
+                        <h3>📁 Ventas por Categoría</h3>
+                        <div id="categoriaChart" class="categoria-chart">
+                            <p class="sin-datos">Aún no hay ventas registradas.</p>
+                        </div>
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- ===== TAB: GESTIÓN DE INVENTARIO ===== -->
+            <section class="admin-tab oculto" id="tabInventario">
+
+                <div class="admin-tab-header">
+
+                    <h2 class="admin-tab-titulo">Gestión de Inventario</h2>
+
+                    <button type="button" class="btn-primario btn-agregar-producto" onclick="abrirModalProducto()">
+                        + Agregar Nuevo Producto
+                    </button>
+
+                </div>
+
+                <div class="leyenda-stock">
+                    <span class="leyenda-item"><i class="punto punto-azul"></i> Stock Alto (≥ 15)</span>
+                    <span class="leyenda-item"><i class="punto punto-rojo"></i> Stock Bajo (1-14)</span>
+                    <span class="leyenda-item"><i class="punto punto-gris"></i> Agotado</span>
+                </div>
+
+                <div class="inventario-toolbar">
+
+                    <input
+                        type="text"
+                        id="buscarProductoAdmin"
+                        placeholder="🔎 Buscar producto por nombre..."
+                        oninput="renderizarInventarioAdmin(1)"
+                    >
+
+                    <select id="filtroCategoriaAdmin" onchange="renderizarInventarioAdmin(1)">
+                        <option value="TODAS">Todas las categorías</option>
+                    </select>
+
+                </div>
+
+                <div class="tabla-wrapper">
+
+                    <table class="tabla-admin">
+
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Categoría</th>
+                                <th>P. Regular</th>
+                                <th>P. Oferta</th>
+                                <th>Stock</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="tablaInventarioAdmin"></tbody>
+
+                    </table>
+
+                </div>
+
+                <div class="paginacion" id="paginacionInventario"></div>
+
+            </section>
+
+            <!-- ===== TAB: HISTORIAL DE VENTAS ===== -->
+            <section class="admin-tab oculto" id="tabVentas">
+
+                <h2 class="admin-tab-titulo">Historial y Auditoría de Ventas</h2>
+
+                <div class="tabla-wrapper">
+
+                    <table class="tabla-admin">
+
+                        <thead>
+                            <tr>
+                                <th>Hora</th>
+                                <th>N° Comprobante</th>
+                                <th>Tipo</th>
+                                <th>Documento Cliente</th>
+                                <th>Total</th>
+                                <th>Comprobante</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="tablaVentasAdmin">
+                            <tr><td colspan="6" class="sin-datos">Aún no se han registrado ventas.</td></tr>
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+    <!-- ============================================
+         MODAL: AGREGAR / EDITAR PRODUCTO
+         ============================================ -->
+    <div class="modal-overlay oculto" id="modalProducto">
+
+        <div class="modal-box">
+
+            <div class="modal-header">
+                <h3 id="modalProductoTitulo">Agregar Nuevo Producto</h3>
+                <button type="button" class="modal-cerrar" onclick="cerrarModalProducto()">✕</button>
+            </div>
+
+            <form id="formProducto" class="form-nuevo-producto" onsubmit="guardarProducto(event)">
+
+                <input type="hidden" id="prodIdEdicion">
+
+                <label for="prodNombre">Nombre del Producto:</label>
+                <input type="text" id="prodNombre" required>
+
+                <label for="prodCategoria">Categoría:</label>
+                <select id="prodCategoria" required></select>
+
+                <div class="form-fila-doble">
+
+                    <div>
+                        <label for="prodPrecioRegular">Precio Regular (S/):</label>
+                        <input type="number" id="prodPrecioRegular" step="0.01" min="0" required>
+                    </div>
+
+                    <div>
+                        <label for="prodPrecioOferta">Precio Oferta (S/):</label>
+                        <input type="number" id="prodPrecioOferta" step="0.01" min="0">
+                    </div>
+
+                </div>
+
+                <label for="prodStock">Stock:</label>
+                <input type="number" id="prodStock" min="0" step="1" required>
+
+                <label class="checkbox-prime">
+                    <input type="checkbox" id="prodPrime">
+                    Producto Prime
+                </label>
+
+                <button type="submit" class="btn-primario block">
+                    Guardar Producto
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <!-- ============================================
+         MODAL: VER COMPROBANTE
+         ============================================ -->
+    <div class="modal-overlay oculto" id="modalComprobante">
+
+        <div class="modal-box modal-box-ticket">
+
+            <div class="modal-header">
+                <h3>Comprobante</h3>
+                <button type="button" class="modal-cerrar" onclick="cerrarModalComprobante()">✕</button>
+            </div>
+
+            <div id="modalComprobanteContenido" class="ticket-output-wrapper"></div>
+
+            <button type="button" class="btn-json block" onclick="verJSONComprobante()">
+                Ver JSON en Consola (F12)
+            </button>
+
+        </div>
+
+    </div>
+
+    <script src="app.js"></script>
+
+</body>
+
+</html>
