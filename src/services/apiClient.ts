@@ -1,7 +1,7 @@
 import { FetchRestService } from './fetchService';
 import { AxiosRestService } from './axiosService';
 import { AlovaRestService } from './alovaService';
-import { Producto, Venta } from '../types/pos';
+import { Producto, Venta, NuevoProductoInput, ActualizarProductoInput } from '../types/pos';
 
 export type ServiceDriver = 'Fetch' | 'Axios' | 'Alova';
 
@@ -75,7 +75,7 @@ class ApiManager {
     });
   }
 
-  async createProducto(prod: Omit<Producto, 'id'>): Promise<Producto> {
+  async createProducto(prod: NuevoProductoInput): Promise<Producto> {
     return this.executeWithMetrics('/api/productos', 'POST', () => {
       if (this.activeDriver === 'Axios') return AxiosRestService.createProducto(prod);
       if (this.activeDriver === 'Alova') return AlovaRestService.createProducto(prod);
@@ -83,7 +83,7 @@ class ApiManager {
     });
   }
 
-  async updateProducto(id: string, updates: Partial<Producto>): Promise<Producto> {
+  async updateProducto(id: string, updates: ActualizarProductoInput): Promise<Producto> {
     return this.executeWithMetrics(`/api/productos/${id}`, 'PUT', () => {
       if (this.activeDriver === 'Axios') return AxiosRestService.updateProducto(id, updates);
       if (this.activeDriver === 'Alova') return AlovaRestService.updateProducto(id, updates);

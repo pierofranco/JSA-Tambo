@@ -1,8 +1,18 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
-import { Producto, ItemCarrito, Venta, ClienteComprobante, TotalesCalculados } from '../types/pos';
+import {
+  Producto,
+  ItemCarrito,
+  Venta,
+  ClienteComprobante,
+  TotalesCalculados,
+  CategoriaInfo,
+  NuevoProductoInput,
+  ActualizarProductoInput
+} from '../types/pos';
 import { useCartReducer } from '../hooks/useCartReducer';
 import { ApiClient, ServiceDriver, RequestMetrics } from '../services/apiClient';
-import { IGV_RATE } from '../data/initialProducts';
+import { calcularImpuestoDesdeTotal } from '../../shared/tax';
+import { rucChecksumValido } from '../../shared/validators';
 
 interface PosContextType {
   // Productos & Filtros
@@ -13,6 +23,11 @@ interface PosContextType {
   busqueda: string;
   setBusqueda: (q: string) => void;
   recargarProductos: () => Promise<void>;
+
+  // Categorías (dinámicas, el administrador puede crear nuevas)
+  categorias: CategoriaInfo[];
+  recargarCategorias: () => Promise<void>;
+  crearCategoria: (nombre: string, prefijo: string) => Promise<CategoriaInfo>;
 
   // Carrito (gestionado con useCartReducer - State Hook)
   cart: ItemCarrito[];
@@ -45,8 +60,8 @@ interface PosContextType {
   setUltimaVenta: (v: Venta | null) => void;
 
   // CRUD Inventario (consumiendo Servicios REST)
-  crearProducto: (prod: Omit<Producto, 'id'>) => Promise<Producto>;
-  actualizarProducto: (id: string, updates: Partial<Producto>) => Promise<Producto>;
+  crearProducto: (prod: NuevoProductoInput) => Promise<Producto>;
+  actualizarProducto: (id: string, updates: ActualizarProductoInput) => Promise<Producto>;
   eliminarProducto: (id: string) => Promise<void>;
 
   // Gestión de Servicios (Fetch API, Axios, Alova)
@@ -63,6 +78,7 @@ export const PosProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [loadingProductos, setLoadingProductos] = useState<boolean>(true);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string>('Todas');
   const [busqueda, setBusqueda] = useState<string>('');
+  const [categorias, setCategorias] = useState<CategoriaInfo[]>([]);
 
   // 2. STATE HOOK (useReducer): Carrito
   const { cart, dispatch } = useCartReducer();
@@ -125,11 +141,34 @@ export const PosProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, []);
 
+  // Categorías dinámicas (el admin puede crear más desde Gestión de Inventario)
+  const recargarCategorias = useCallback(async () => {
+    try {
+      const res = await fetch('/api/categorias');
+      if (res.ok) setCategorias(await res.json());
+    } catch (err) {
+      console.error('Error al cargar categorías:', err);
+    }
+  }, []);
+
+  const crearCategoria = async (nombre: string, prefijo: string): Promise<CategoriaInfo> => {
+    const res = await fetch('/api/categorias', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre, prefijo })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'No se pudo crear la categoría.');
+    await recargarCategorias();
+    return data;
+  };
+
   // Inicialización con useEffect (Lifecycle Hook)
   useEffect(() => {
     recargarProductos();
     recargarVentas();
-  }, [recargarProductos, recargarVentas]);
+    recargarCategorias();
+  }, [recargarProductos, recargarVentas, recargarCategorias]);
 
   // Acciones sobre el carrito (usando useReducer dispatch)
   const agregarAlCarrito = (prod: Producto): boolean => {
@@ -175,7 +214,9 @@ export const PosProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const descuentoTotal = descuentoBase + descuentoCuponReal;
     const subtotalFinal = Math.max(0, totalProductos - descuentoTotal);
-    const igv = Math.round(subtotalFinal * IGV_RATE * 100) / 100;
+    // El IGV va INCLUIDO en subtotalFinal (precio final al cliente), no se
+    // suma aparte: se extrae con la fórmula 18/118, nunca total * 18%.
+    const { igv } = calcularImpuestoDesdeTotal(subtotalFinal);
 
     return {
       totalProductos,
@@ -193,10 +234,15 @@ export const PosProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setMensajeCupon({ texto: 'Ya tienes un cupón aplicado. Quítalo para cambiarlo.', tipo: 'danger' });
       return false;
     }
+    const codigoLimpio = codigo.trim().toUpperCase().slice(0, 30);
+    if (!codigoLimpio) {
+      setMensajeCupon({ texto: 'Ingresa un código de cupón.', tipo: 'danger' });
+      return false;
+    }
     try {
-      const resp = await ApiClient.validarCupon(codigo);
+      const resp = await ApiClient.validarCupon(codigoLimpio);
       if (resp.valido) {
-        setCuponCodigo(codigo.trim().toUpperCase());
+        setCuponCodigo(codigoLimpio);
         setCuponMonto(resp.descuento);
         setMensajeCupon({ texto: resp.mensaje, tipo: 'success' });
         return true;
@@ -204,8 +250,12 @@ export const PosProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setMensajeCupon({ texto: resp.mensaje, tipo: 'danger' });
         return false;
       }
-    } catch {
-      setMensajeCupon({ texto: 'Error al conectar con el servicio de cupones.', tipo: 'danger' });
+    } catch (e: any) {
+      // Distingue un código mal formado (400, mensaje propio del backend) de
+      // un error real de red/servidor — no todo catch es "no hay conexión".
+      const texto =
+        e?.message === 'Código de cupón inválido.' ? e.message : 'Error al conectar con el servicio de cupones.';
+      setMensajeCupon({ texto, tipo: 'danger' });
       return false;
     }
   };
@@ -216,49 +266,54 @@ export const PosProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setMensajeCupon(null);
   };
 
-  // Consultas externas simuladas (SUNAT / RENIEC vía Servicio REST)
+  // Consultas externas (SUNAT / RENIEC vía Servicio REST). No atrapan el
+  // error: el llamador (CartSection) lo muestra en la UI, igual que con DNI.
   const consultarRucAuto = async (ruc: string) => {
-    try {
-      const res = await ApiClient.consultarRuc(ruc);
-      setDatosCliente((prev) => ({ ...prev, razonSocial: res.razonSocial }));
-    } catch (e: any) {
-      console.warn('Consulta RUC:', e.message);
-    }
+    const res = await ApiClient.consultarRuc(ruc);
+    setDatosCliente((prev) => (prev.ruc === ruc ? { ...prev, razonSocial: res.razonSocial } : prev));
   };
 
   const consultarDniAuto = async (dni: string) => {
-    try {
-      await ApiClient.consultarDni(dni);
-    } catch (e: any) {
-      console.warn('Consulta DNI:', e.message);
-    }
+    const res = await ApiClient.consultarDni(dni);
+    setDatosCliente((prev) =>
+      prev.numDoc === dni ? { ...prev, nombreCliente: res.nombreCompleto, dniVerificado: dni } : prev
+    );
   };
 
-  // Procesar Transacción de Pago
+  // Procesar Transacción de Pago. No usa alert(): la validación de campos la
+  // hace CartSection ANTES de llamar aquí (mensajes inline, campo en rojo).
+  // Estas comprobaciones quedan como respaldo silencioso por si algo más
+  // llama a procesarVenta en un estado inválido.
   const procesarVenta = async (): Promise<Venta | null> => {
     if (cart.length === 0) {
-      alert('El carrito está vacío. Agrega productos para procesar la venta.');
+      console.warn('procesarVenta: carrito vacío.');
       return null;
     }
 
     // Validar comprobante
     if (datosCliente.tipoComprobante === 'FACTURA') {
-      if (!/^\d{11}$/.test(datosCliente.ruc)) {
-        alert('El RUC debe tener exactamente 11 dígitos numéricos.');
+      if (!/^\d{11}$/.test(datosCliente.ruc) || !rucChecksumValido(datosCliente.ruc)) {
+        console.warn('procesarVenta: RUC inválido.');
         return null;
       }
       if (!datosCliente.razonSocial.trim()) {
-        alert('Ingrese la Razón Social para la Factura.');
+        console.warn('procesarVenta: falta Razón Social.');
         return null;
       }
     } else {
       // Boleta
-      if (datosCliente.tipoDoc === 'DNI' && datosCliente.numDoc && !/^\d{8}$/.test(datosCliente.numDoc)) {
-        alert('El DNI debe tener 8 dígitos.');
-        return null;
+      if (datosCliente.tipoDoc === 'DNI') {
+        if (!datosCliente.numDoc || !/^\d{8}$/.test(datosCliente.numDoc)) {
+          console.warn('procesarVenta: DNI inválido.');
+          return null;
+        }
+        if (datosCliente.dniVerificado !== datosCliente.numDoc) {
+          console.warn('procesarVenta: DNI no verificado con RENIEC.');
+          return null;
+        }
       }
-      if (datosCliente.tipoDoc === 'CE' && datosCliente.numDoc && !/^\d{9}$/.test(datosCliente.numDoc)) {
-        alert('El Carné de Extranjería debe tener 9 dígitos.');
+      if (datosCliente.tipoDoc === 'CE' && (!datosCliente.numDoc || !/^\d{9}$/.test(datosCliente.numDoc))) {
+        console.warn('procesarVenta: Carné de Extranjería inválido.');
         return null;
       }
     }
@@ -301,19 +356,19 @@ export const PosProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       return ventaRegistrada;
     } catch (err: any) {
-      alert(`Error al registrar venta: ${err.message}`);
-      return null;
+      // No usa alert(): se relanza para que CartSection lo muestre inline.
+      throw new Error(err?.message || 'No se pudo registrar la venta.');
     }
   };
 
   // CRUD Inventario
-  const crearProducto = async (prod: Omit<Producto, 'id'>): Promise<Producto> => {
+  const crearProducto = async (prod: NuevoProductoInput): Promise<Producto> => {
     const nuevo = await ApiClient.createProducto(prod);
     await recargarProductos();
     return nuevo;
   };
 
-  const actualizarProducto = async (id: string, updates: Partial<Producto>): Promise<Producto> => {
+  const actualizarProducto = async (id: string, updates: ActualizarProductoInput): Promise<Producto> => {
     const mod = await ApiClient.updateProducto(id, updates);
     await recargarProductos();
     return mod;
@@ -334,6 +389,9 @@ export const PosProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         busqueda,
         setBusqueda,
         recargarProductos,
+        categorias,
+        recargarCategorias,
+        crearCategoria,
         cart,
         agregarAlCarrito,
         cambiarCantidadCarrito,

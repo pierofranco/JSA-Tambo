@@ -1,77 +1,76 @@
-import { MockRestServer } from './mockRestServer';
-import { Producto, Venta } from '../types/pos';
+import { Producto, Venta, NuevoProductoInput, ActualizarProductoInput } from '../types/pos';
+
+const BASE_URL = '/api';
 
 /**
  * SERVICIO REST CON FETCH API
  * Demuestra el uso nativo de Fetch API en React:
- * - Solicitudes HTTP con promesas nativas
- * - Headers, métodos GET, POST, PUT, DELETE
- * - AbortController para cancelación de peticiones
- * - Transformación y control de errores HTTP
+ * - Peticiones HTTP reales contra el backend mock de TAMBOPOS (/api/*)
+ * - Promesas nativas con async/await, headers y métodos GET, POST, PUT, DELETE
+ * - Deserialización manual (`res.json()`) y control de errores HTTP (res.ok)
  */
-export class FetchRestService {
-  private static async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    // En una aplicación con servidor externo, se utilizaría:
-    // const res = await fetch(`https://api.tambopos.com${endpoint}`, options);
-    // if (!res.ok) throw new Error(`Fetch error: ${res.statusText}`);
-    // return await res.json();
+async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    headers: { 'Content-Type': 'application/json', ...(options?.headers || {}) },
+    ...options
+  });
 
-    // Con nuestro Mock REST Server:
-    if (endpoint.startsWith('/api/productos')) {
-      if (options?.method === 'POST') {
-        const body = JSON.parse(options.body as string);
-        return MockRestServer.createProducto(body) as Promise<T>;
-      }
-      return MockRestServer.getProductos() as Promise<T>;
-    }
-    if (endpoint.startsWith('/api/ventas')) {
-      if (options?.method === 'POST') {
-        const body = JSON.parse(options.body as string);
-        return MockRestServer.createVenta(body) as Promise<T>;
-      }
-      return MockRestServer.getVentas() as Promise<T>;
-    }
-    throw new Error(`Endpoint no soportado: ${endpoint}`);
+  if (!res.ok) {
+    const errorBody = await res.json().catch(() => ({}));
+    throw new Error(errorBody.message || `Fetch error: ${res.status} ${res.statusText}`);
   }
+  return res.json() as Promise<T>;
+}
 
+export class FetchRestService {
   static async getProductos(categoria?: string, search?: string): Promise<Producto[]> {
-    return MockRestServer.getProductos(categoria, search);
+    const params = new URLSearchParams();
+    if (categoria) params.set('categoria', categoria);
+    if (search) params.set('search', search);
+    const qs = params.toString();
+    return request<Producto[]>(`/productos${qs ? `?${qs}` : ''}`);
   }
 
   static async getProductoById(id: string): Promise<Producto> {
-    return MockRestServer.getProductoById(id);
+    return request<Producto>(`/productos/${encodeURIComponent(id)}`);
   }
 
-  static async createProducto(prod: Omit<Producto, 'id'>): Promise<Producto> {
-    return MockRestServer.createProducto(prod);
+  static async createProducto(prod: NuevoProductoInput): Promise<Producto> {
+    return request<Producto>('/productos', { method: 'POST', body: JSON.stringify(prod) });
   }
 
-  static async updateProducto(id: string, updates: Partial<Producto>): Promise<Producto> {
-    return MockRestServer.updateProducto(id, updates);
+  static async updateProducto(id: string, updates: ActualizarProductoInput): Promise<Producto> {
+    return request<Producto>(`/productos/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates)
+    });
   }
 
   static async deleteProducto(id: string): Promise<{ success: boolean; id: string }> {
-    return MockRestServer.deleteProducto(id);
+    return request(`/productos/${encodeURIComponent(id)}`, { method: 'DELETE' });
   }
 
   static async getVentas(): Promise<Venta[]> {
-    return MockRestServer.getVentas();
+    return request<Venta[]>('/ventas');
   }
 
   static async createVenta(venta: Omit<Venta, 'id' | 'correlativo' | 'fecha' | 'hora'>): Promise<Venta> {
-    return MockRestServer.createVenta(venta);
+    return request<Venta>('/ventas', { method: 'POST', body: JSON.stringify(venta) });
   }
 
   static async validarCupon(codigo: string) {
-    return MockRestServer.validarCupon(codigo);
+    return request<{ valido: boolean; descuento: number; mensaje: string }>(
+      `/cupones/${encodeURIComponent(codigo)}`
+    );
   }
 
   static async consultarRuc(ruc: string) {
-    return MockRestServer.consultarRucSunat(ruc);
+    return request<{ ruc: string; razonSocial: string; estado: string }>(
+      `/consulta-ruc/${encodeURIComponent(ruc)}`
+    );
   }
 
   static async consultarDni(dni: string) {
-    return MockRestServer.consultarDniReniec(dni);
+    return request<{ dni: string; nombreCompleto: string }>(`/consulta-dni/${encodeURIComponent(dni)}`);
   }
 }
-

@@ -1,13 +1,21 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { RolUsuario } from '../types/pos';
-import { ADMIN_PIN } from '../data/initialProducts';
+
+interface SessionUser {
+  id: number;
+  username: string;
+  rol: 'ADMIN' | 'CAJERO';
+  nombreCompleto: string;
+}
 
 interface AuthContextType {
   rol: RolUsuario;
   nombreRol: string;
-  loginCajero: () => void;
-  loginAdmin: (pin: string) => boolean;
-  logout: () => void;
+  username: string | null;
+  nombreCompleto: string | null;
+  cargandoSesion: boolean;
+  login: (username: string, password: string) => Promise<{ ok: boolean; mensaje?: string; rol?: 'ADMIN' | 'CAJERO' }>;
+  logout: () => Promise<void>;
   isAdmin: boolean;
   isCajero: boolean;
 }
@@ -15,31 +23,51 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [rol, setRol] = useState<RolUsuario>(() => {
-    const saved = localStorage.getItem('tambopos_rol');
-    return (saved as RolUsuario) || 'INVITADO';
-  });
+  const [usuario, setUsuario] = useState<SessionUser | null>(null);
+  const [cargandoSesion, setCargandoSesion] = useState<boolean>(true);
+
+  const cargarSesion = useCallback(async () => {
+    try {
+      const res = await fetch('/api/auth/me');
+      if (res.ok) {
+        setUsuario(await res.json());
+      } else {
+        setUsuario(null);
+      }
+    } catch {
+      setUsuario(null);
+    } finally {
+      setCargandoSesion(false);
+    }
+  }, []);
 
   useEffect(() => {
-    localStorage.setItem('tambopos_rol', rol);
-  }, [rol]);
+    cargarSesion();
+  }, [cargarSesion]);
 
-  const loginCajero = () => {
-    setRol('CAJERO');
-  };
-
-  const loginAdmin = (pin: string): boolean => {
-    if (pin === ADMIN_PIN) {
-      setRol('ADMIN');
-      return true;
+  const login = async (
+    username: string,
+    password: string
+  ): Promise<{ ok: boolean; mensaje?: string; rol?: 'ADMIN' | 'CAJERO' }> => {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      return { ok: false, mensaje: data.message || 'No se pudo iniciar sesión.' };
     }
-    return false;
+    setUsuario(data);
+    return { ok: true, rol: data.rol };
   };
 
-  const logout = () => {
-    setRol('INVITADO');
+  const logout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    setUsuario(null);
   };
 
+  const rol: RolUsuario = usuario?.rol || 'INVITADO';
   const nombreRol = rol === 'ADMIN' ? 'Administrador' : rol === 'CAJERO' ? 'Cajero Activo' : 'Sin Sesión';
 
   return (
@@ -47,8 +75,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       value={{
         rol,
         nombreRol,
-        loginCajero,
-        loginAdmin,
+        username: usuario?.username ?? null,
+        nombreCompleto: usuario?.nombreCompleto ?? null,
+        cargandoSesion,
+        login,
         logout,
         isAdmin: rol === 'ADMIN',
         isCajero: rol === 'CAJERO'
@@ -66,4 +96,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-

@@ -183,10 +183,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ producto }) => {
                       Gestión del estado de los inputs sincronizado en memoria:
                     </p>
                     <ul className="small">
-                      <li>Login de Admin con PIN numérico</li>
+                      <li>Login real con usuario y contraseña (sesión server-side)</li>
                       <li>Selección dinámica Boleta vs Factura</li>
-                      <li>Validación de 11 dígitos para RUC con SUNAT</li>
-                      <li>Validación de 8 dígitos para DNI</li>
+                      <li>Validación de RUC real contra SUNAT (Decolecta)</li>
+                      <li>Validación de DNI real contra RENIEC (Decolecta)</li>
                       <li>Alta/Edición de productos con validación numérica</li>
                     </ul>
                   </div>
@@ -355,7 +355,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ producto }) => {
                   <div className="my-1">📁 <strong>Componentes Bootstrap:</strong> Navbar, ProductCard, CartSection, KpiGrid, Tables, Modals</div>
                   <div className="my-1">📁 <strong>Hooks:</strong> useCartReducer (State), useAuth / usePos (Context), useRefHooks (Ref), useResource (Resource)</div>
                   <div className="my-1">📁 <strong>Servicios REST:</strong> ApiClient ➔ [FetchRestService | AxiosRestService | AlovaRestService]</div>
-                  <div>📁 <strong>Mock REST Server & Cache:</strong> LocalStorage Database, Simulador SUNAT / RENIEC</div>
+                  <div>📁 <strong>Backend Real:</strong> Node + PostgreSQL (server/), autenticación JWT, SUNAT/RENIEC vía Decolecta</div>
                 </div>
               </div>
             </Card.Body>

@@ -1,40 +1,25 @@
 import React, { useState } from 'react';
-import { Container, Nav, Button, Alert } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { Container, Nav } from 'react-bootstrap';
 import { usePos } from '../context/PosContext';
 import { KpiGrid } from '../components/admin/KpiGrid';
 import { AnalyticsCharts } from '../components/admin/AnalyticsCharts';
 import { InventoryManagement } from '../components/admin/InventoryManagement';
 import { SalesHistory } from '../components/admin/SalesHistory';
+import { ProveedoresCompras } from '../components/admin/ProveedoresCompras';
+import { GestionarUsuarios } from '../components/admin/GestionarUsuarios';
+import { LowStockModal } from '../components/admin/LowStockModal';
+
+type AdminTab = 'resumen' | 'inventario' | 'proveedores' | 'ventas' | 'usuarios';
 
 export const AdminDashboard: React.FC = () => {
-  const { isAdmin, loginCajero } = useAuth();
   const { ventas, productos } = usePos();
-  const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<'resumen' | 'inventario' | 'ventas'>('resumen');
-
-  const handleCambiarACajero = () => {
-    loginCajero();
-    navigate('/cajero');
-  };
+  const [activeTab, setActiveTab] = useState<AdminTab>('resumen');
+  const [mostrarAlertasStock, setMostrarAlertasStock] = useState(false);
+  const [compraPrefill, setCompraPrefill] = useState<{ proveedorId: number; productoId: string } | null>(null);
 
   return (
     <Container fluid className="px-3 px-md-4 py-3">
-      {/* Banner de acceso de administrador */}
-      {!isAdmin && (
-        <Alert variant="warning" className="d-flex justify-content-between align-items-center mb-3">
-          <div>
-            <i className="bi bi-shield-exclamation me-2"></i>
-            Estás visualizando el panel como <strong>Invitado / Demo</strong>. Para privilegios de administrador completos, inicia sesión con el PIN (1234).
-          </div>
-          <Button variant="outline-dark" size="sm" onClick={() => navigate('/')}>
-            Ingresar PIN
-          </Button>
-        </Alert>
-      )}
-
       {/* Header del Dashboard */}
       <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
@@ -45,18 +30,10 @@ export const AdminDashboard: React.FC = () => {
             Control de inventario en tiempo real, KPIs financieros y auditoría de ventas.
           </p>
         </div>
-
-        <Button
-          variant="outline-purple"
-          className="d-flex align-items-center gap-2 fw-semibold"
-          onClick={handleCambiarACajero}
-        >
-          <span>🧑‍💼</span> Cambiar a Modo Cajero
-        </Button>
       </div>
 
       {/* Tabs de Navegación del Administrador */}
-      <Nav variant="pills" className="admin-nav-tabs mb-4 gap-2 border-bottom pb-2">
+      <Nav variant="pills" className="admin-nav-tabs mb-4 gap-2 border-bottom pb-2 flex-wrap">
         <Nav.Item>
           <Nav.Link
             active={activeTab === 'resumen'}
@@ -79,6 +56,16 @@ export const AdminDashboard: React.FC = () => {
 
         <Nav.Item>
           <Nav.Link
+            active={activeTab === 'proveedores'}
+            onClick={() => setActiveTab('proveedores')}
+            className="d-flex align-items-center gap-2"
+          >
+            <i className="bi bi-truck"></i> Proveedores & Compras
+          </Nav.Link>
+        </Nav.Item>
+
+        <Nav.Item>
+          <Nav.Link
             active={activeTab === 'ventas'}
             onClick={() => setActiveTab('ventas')}
             className="d-flex align-items-center gap-2"
@@ -86,13 +73,23 @@ export const AdminDashboard: React.FC = () => {
             <i className="bi bi-receipt-cutoff"></i> Historial de Ventas ({ventas.length})
           </Nav.Link>
         </Nav.Item>
+
+        <Nav.Item>
+          <Nav.Link
+            active={activeTab === 'usuarios'}
+            onClick={() => setActiveTab('usuarios')}
+            className="d-flex align-items-center gap-2"
+          >
+            <i className="bi bi-people"></i> Gestionar Usuarios
+          </Nav.Link>
+        </Nav.Item>
       </Nav>
 
       {/* Contenido según Tab Activo */}
       {activeTab === 'resumen' && (
         <div className="tab-pane-resumen">
-          <KpiGrid ventas={ventas} productos={productos} />
-          <AnalyticsCharts ventas={ventas} />
+          <KpiGrid ventas={ventas} productos={productos} onVerAlertasStock={() => setMostrarAlertasStock(true)} />
+          <AnalyticsCharts ventas={ventas} productos={productos} />
         </div>
       )}
 
@@ -102,12 +99,33 @@ export const AdminDashboard: React.FC = () => {
         </div>
       )}
 
+      {activeTab === 'proveedores' && (
+        <div className="tab-pane-proveedores">
+          <ProveedoresCompras prefill={compraPrefill} onPrefillConsumed={() => setCompraPrefill(null)} />
+        </div>
+      )}
+
       {activeTab === 'ventas' && (
         <div className="tab-pane-ventas">
           <SalesHistory ventas={ventas} />
         </div>
       )}
+
+      {activeTab === 'usuarios' && (
+        <div className="tab-pane-usuarios">
+          <GestionarUsuarios />
+        </div>
+      )}
+
+      <LowStockModal
+        show={mostrarAlertasStock}
+        onHide={() => setMostrarAlertasStock(false)}
+        onSolicitar={(proveedorId, productoId) => {
+          setCompraPrefill({ proveedorId, productoId });
+          setMostrarAlertasStock(false);
+          setActiveTab('proveedores');
+        }}
+      />
     </Container>
   );
 };
-

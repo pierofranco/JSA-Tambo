@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Table, Button, Badge, Card, Row, Col, Form } from 'react-bootstrap';
+import { Table, Button, Badge, Card, Row, Col, Form, Alert } from 'react-bootstrap';
 import { Venta } from '../../types/pos';
 import { TicketThermalModal } from '../pos/TicketThermalModal';
+import { DateRangeFilter } from './DateRangeFilter';
+import { fechaVentaEnRango, rangoFechasValido } from '../../utils/dateRange';
 
 interface SalesHistoryProps {
   ventas: Venta[];
@@ -10,11 +12,18 @@ interface SalesHistoryProps {
 export const SalesHistory: React.FC<SalesHistoryProps> = ({ ventas }) => {
   const [filtroTipo, setFiltroTipo] = useState<string>('TODOS');
   const [ventaSeleccionada, setVentaSeleccionada] = useState<Venta | null>(null);
+  const [desde, setDesde] = useState('');
+  const [hasta, setHasta] = useState('');
 
-  const ventasFiltradas = ventas.filter((v) => {
-    if (filtroTipo === 'TODOS') return true;
-    return v.comprobante === filtroTipo;
-  });
+  const rangoValido = rangoFechasValido(desde, hasta);
+
+  const ventasFiltradas = !rangoValido
+    ? []
+    : ventas.filter((v) => {
+        if (filtroTipo !== 'TODOS' && v.comprobante !== filtroTipo) return false;
+        if (!fechaVentaEnRango(v.fecha, desde, hasta)) return false;
+        return true;
+      });
 
   const handleVerTicket = (venta: Venta) => {
     setVentaSeleccionada(venta);
@@ -23,7 +32,7 @@ export const SalesHistory: React.FC<SalesHistoryProps> = ({ ventas }) => {
   return (
     <Card className="shadow-sm border-0 mb-4">
       <Card.Header className="bg-white py-3 border-0">
-        <Row className="align-items-center g-2">
+        <Row className="align-items-center g-2 mb-2">
           <Col xs={12} sm={8}>
             <h5 className="m-0 fw-bold text-purple d-flex align-items-center gap-2">
               <i className="bi bi-clock-history"></i> Historial y Auditoría de Ventas
@@ -42,6 +51,13 @@ export const SalesHistory: React.FC<SalesHistoryProps> = ({ ventas }) => {
             </Form.Select>
           </Col>
         </Row>
+        <DateRangeFilter desde={desde} hasta={hasta} onChange={(d, h) => { setDesde(d); setHasta(h); }} />
+        {!rangoValido && (
+          <Alert variant="warning" className="py-2 px-2 small mt-2 mb-0">
+            <i className="bi bi-exclamation-triangle me-1"></i>
+            Rango de fechas inválido: "Desde" no puede ser posterior a "Hasta".
+          </Alert>
+        )}
       </Card.Header>
 
       <Card.Body>
@@ -63,7 +79,11 @@ export const SalesHistory: React.FC<SalesHistoryProps> = ({ ventas }) => {
                 <tr>
                   <td colSpan={7} className="text-center py-4 text-muted">
                     <i className="bi bi-inbox display-6 d-block mb-2 text-secondary"></i>
-                    Aún no se han registrado ventas en el sistema.
+                    {!rangoValido
+                      ? 'Corrige el rango de fechas para ver resultados.'
+                      : ventas.length === 0
+                        ? 'Aún no se han registrado ventas en el sistema.'
+                        : 'No hay ventas en el rango o filtro seleccionado.'}
                   </td>
                 </tr>
               ) : (

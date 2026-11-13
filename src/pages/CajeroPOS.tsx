@@ -4,7 +4,6 @@ import { usePos } from '../context/PosContext';
 import { ProductCard } from '../components/pos/ProductCard';
 import { CartSection } from '../components/pos/CartSection';
 import { TicketThermalModal } from '../components/pos/TicketThermalModal';
-import { Categoria } from '../types/pos';
 
 export const CajeroPOS: React.FC = () => {
   const {
@@ -14,12 +13,13 @@ export const CajeroPOS: React.FC = () => {
     setCategoriaSeleccionada,
     busqueda,
     setBusqueda,
-    ultimaVenta
+    ultimaVenta,
+    categorias: categoriasInfo
   } = usePos();
 
   const [modalTicketAbierto, setModalTicketAbierto] = useState<boolean>(false);
 
-  const categorias: Categoria[] = ['Todas', 'Bebidas', 'Snacks', 'Comida Rápida', 'Abarrotes'];
+  const categorias: string[] = ['Todas', ...categoriasInfo.map((c) => c.nombre)];
 
   // Filtrado reactivo con useMemo
   const productosFiltrados = useMemo(() => {
@@ -116,7 +116,7 @@ export const CajeroPOS: React.FC = () => {
 
         {/* COLUMNA DERECHA: Carrito y Checkout */}
         <Col xs={12} lg={4} xl={4}>
-          <div className="sticky-top" style={{ top: '80px' }}>
+          <div className="sticky-top cart-panel-scroll" style={{ top: '80px' }}>
             <CartSection onVentaCompletada={handleVentaCompletada} />
           </div>
         </Col>

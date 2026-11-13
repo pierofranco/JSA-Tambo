@@ -6,15 +6,15 @@ import { usePos } from '../../context/PosContext';
 import { ServiceDriver } from '../../services/apiClient';
 
 export const HeaderNavbar: React.FC = () => {
-  const { rol, logout, isAdmin } = useAuth();
+  const { rol, logout, isAdmin, isCajero, nombreCompleto } = useAuth();
   const { cart, driverServicio, setDriverServicio } = usePos();
   const navigate = useNavigate();
   const location = useLocation();
 
   const totalItemsEnCarrito = cart.reduce((acc, item) => acc + item.cantidad, 0);
 
-  const handleCerrarSesion = () => {
-    logout();
+  const handleCerrarSesion = async () => {
+    await logout();
     navigate('/');
   };
 
@@ -46,26 +46,30 @@ export const HeaderNavbar: React.FC = () => {
         <Navbar.Collapse id="main-navbar-nav">
           {/* Enlaces de Navegación (React Router NavLink) */}
           <Nav className="me-auto ms-lg-3 gap-1">
-            <Nav.Link
-              as={NavLink}
-              to="/cajero"
-              className={`tambo-nav-link ${isCurrent('/cajero') ? 'active' : ''}`}
-            >
-              <i className="bi bi-cart3 me-1"></i> Punto de Venta (Cajero)
-              {totalItemsEnCarrito > 0 && (
-                <Badge pill bg="warning" text="dark" className="ms-1 fw-bold">
-                  {totalItemsEnCarrito}
-                </Badge>
-              )}
-            </Nav.Link>
+            {(isAdmin || isCajero) && (
+              <Nav.Link
+                as={NavLink}
+                to="/cajero"
+                className={`tambo-nav-link ${isCurrent('/cajero') ? 'active' : ''}`}
+              >
+                <i className="bi bi-cart3 me-1"></i> Punto de Venta (Cajero)
+                {totalItemsEnCarrito > 0 && (
+                  <Badge pill bg="warning" text="dark" className="ms-1 fw-bold">
+                    {totalItemsEnCarrito}
+                  </Badge>
+                )}
+              </Nav.Link>
+            )}
 
-            <Nav.Link
-              as={NavLink}
-              to="/admin"
-              className={`tambo-nav-link ${isCurrent('/admin') ? 'active' : ''}`}
-            >
-              <i className="bi bi-speedometer2 me-1"></i> Dashboard Admin
-            </Nav.Link>
+            {isAdmin && (
+              <Nav.Link
+                as={NavLink}
+                to="/admin"
+                className={`tambo-nav-link ${isCurrent('/admin') ? 'active' : ''}`}
+              >
+                <i className="bi bi-speedometer2 me-1"></i> Dashboard Admin
+              </Nav.Link>
+            )}
 
             <Nav.Link
               as={NavLink}

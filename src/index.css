@@ -268,6 +268,16 @@ body {
   overflow: hidden;
 }
 
+/* Deslizador #1: todo el panel del carrito (para que "Procesar Pago" nunca
+   quede fuera de vista sin tener que scrollear la página completa). */
+.cart-panel-scroll {
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  padding-bottom: 4px;
+}
+
+/* Deslizador #2: solo la lista de productos agregados, independiente del
+   panel completo (cupón, totales y botón de pago siempre visibles debajo). */
 .cart-items-scroll {
   max-height: 240px;
   overflow-y: auto;
@@ -332,6 +342,16 @@ body {
 
 .kpi-card {
   border-radius: 12px;
+}
+
+.kpi-card-clickable {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.kpi-card-clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
 }
 
 .kpi-icon-box {

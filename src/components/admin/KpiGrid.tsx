@@ -6,9 +6,10 @@ import { UMBRAL_STOCK_BAJO } from '../../data/initialProducts';
 interface KpiGridProps {
   ventas: Venta[];
   productos: Producto[];
+  onVerAlertasStock?: () => void;
 }
 
-export const KpiGrid: React.FC<KpiGridProps> = ({ ventas, productos }) => {
+export const KpiGrid: React.FC<KpiGridProps> = ({ ventas, productos, onVerAlertasStock }) => {
   const totalVentasDia = ventas.reduce((acc, v) => acc + v.subtotalFinal, 0);
   const ticketPromedio = ventas.length > 0 ? totalVentasDia / ventas.length : 0;
   const igvRecaudado = ventas.reduce((acc, v) => acc + v.igv, 0);
@@ -71,9 +72,14 @@ export const KpiGrid: React.FC<KpiGridProps> = ({ ventas, productos }) => {
         </Card>
       </Col>
 
-      {/* KPI: Alertas de Stock */}
+      {/* KPI: Alertas de Stock (clicable: abre el detalle de productos con bajo stock) */}
       <Col xs={12} sm={6} lg={3}>
-        <Card className={`kpi-card shadow-sm border-0 border-start border-4 ${stockBajoCount > 0 ? 'border-danger' : 'border-secondary'} h-100`}>
+        <Card
+          role="button"
+          onClick={onVerAlertasStock}
+          className={`kpi-card kpi-card-clickable shadow-sm border-0 border-start border-4 ${stockBajoCount > 0 ? 'border-danger' : 'border-secondary'} h-100`}
+          title="Ver productos con bajo stock"
+        >
           <Card.Body>
             <div className="d-flex justify-content-between align-items-center">
               <div>

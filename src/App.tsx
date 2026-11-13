@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { PosProvider } from './context/PosContext';
 import { HeaderNavbar } from './components/common/HeaderNavbar';
+import { RequireAuth } from './components/common/RequireAuth';
 import { RoleSelector } from './pages/RoleSelector';
 import { CajeroPOS } from './pages/CajeroPOS';
 import { AdminDashboard } from './pages/AdminDashboard';
@@ -19,8 +20,22 @@ export const App: React.FC = () => {
             <main className="flex-grow-1">
               <Routes>
                 <Route path="/" element={<RoleSelector />} />
-                <Route path="/cajero" element={<CajeroPOS />} />
-                <Route path="/admin" element={<AdminDashboard />} />
+                <Route
+                  path="/cajero"
+                  element={
+                    <RequireAuth roles={['ADMIN', 'CAJERO']}>
+                      <CajeroPOS />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/admin"
+                  element={
+                    <RequireAuth roles={['ADMIN']}>
+                      <AdminDashboard />
+                    </RequireAuth>
+                  }
+                />
                 <Route path="/servicios-rest" element={<ServicesPage />} />
                 <Route path="/guia-educativa" element={<GuidePage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />

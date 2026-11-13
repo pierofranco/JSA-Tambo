@@ -6,7 +6,7 @@ import { ProductFormModal } from './ProductFormModal';
 import { UMBRAL_STOCK_BAJO } from '../../data/initialProducts';
 
 export const InventoryManagement: React.FC = () => {
-  const { productos, eliminarProducto } = usePos();
+  const { productos, eliminarProducto, categorias } = usePos();
 
   // STATE HOOKS: Filtros locales, paginación y modal
   const [busqueda, setBusqueda] = useState('');
@@ -105,10 +105,11 @@ export const InventoryManagement: React.FC = () => {
               }}
             >
               <option value="Todas">Todas las categorías</option>
-              <option value="Bebidas">Bebidas</option>
-              <option value="Snacks">Snacks</option>
-              <option value="Comida Rápida">Comida Rápida</option>
-              <option value="Abarrotes">Abarrotes</option>
+              {categorias.map((c) => (
+                <option key={c.id} value={c.nombre}>
+                  {c.nombre}
+                </option>
+              ))}
             </Form.Select>
           </Col>
         </Row>

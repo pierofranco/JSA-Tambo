@@ -18,6 +18,14 @@ export const RestExplorer: React.FC = () => {
   const [errorInfo, setErrorInfo] = useState<string | null>(null);
 
   const handleRunRequest = async () => {
+    const necesitaParametro = selectedEndpoint === 'VALIDAR_CUPON' || selectedEndpoint === 'CONSULTAR_RUC';
+    if (necesitaParametro && !paramInput.trim()) {
+      setErrorInfo(selectedEndpoint === 'VALIDAR_CUPON' ? 'Ingresa un código de cupón.' : 'Ingresa un RUC.');
+      setResponseOutput(null);
+      setLatencyMs(null);
+      return;
+    }
+
     setLoading(true);
     setErrorInfo(null);
     setResponseOutput(null);
@@ -128,7 +136,7 @@ export const RestExplorer: React.FC = () => {
                   onChange={(e) => {
                     setSelectedEndpoint(e.target.value);
                     if (e.target.value === 'VALIDAR_CUPON') setParamInput('18892');
-                    if (e.target.value === 'CONSULTAR_RUC') setParamInput('20601234567');
+                    if (e.target.value === 'CONSULTAR_RUC') setParamInput('20100070970');
                   }}
                 >
                   <option value="GET_PRODUCTOS">GET /api/productos (Catálogo de Tambo)</option>
